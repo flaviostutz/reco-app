@@ -10,11 +10,14 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@react-native-community/cameraroll": "^1.5.2",
     "native-base": "^2.13.12",
     "react": "16.11.0",
     "react-native": "0.62.2",
     "react-native-camera": "^3.23.1",
-    "react-native-video": "^4.4.5"
+    "react-native-vector-icons": "^6.6.0",
+    "react-native-video": "^4.4.5",
+    "react-native-video-player": "^0.10.0"
   },
   "devDependencies": {
     "@babel/core": "^7.6.2",
