@@ -8,5 +8,6 @@
 #ifndef Recco_Bridging_Header_h
 #define Recco_Bridging_Header_h
 
+#import RNVideoProcessing.h
 
 #endif /* Recco_Bridging_Header_h */
