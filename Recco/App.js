@@ -65,7 +65,7 @@ class App extends Component {
     lastRecording: null,
 
     recordingStartTime: null,
-    videoStartTime: null,
+    videoLag: null,
 
     videoPicker: false,
     playbackVideo: require('./res/test-30fps-360p.mp4'),
@@ -223,6 +223,8 @@ class App extends Component {
         };
 
         console.log(new Date().getTime() + ' starting recording')
+        this.state.videoLag = Number.MAX_VALUE
+
         // this.state.recordCommandTime = new Date().getTime()
         this.camera.recordAsync(options).then((result) => {
           console.log(new Date().getTime() + " finished recording")
@@ -259,13 +261,10 @@ class App extends Component {
     this.state.firstProgress = true
 
     //sync recording
-    console.log("BEFORE SEEK " + (this.state.recordingStartTime - this.state.videoStartTime)/1000.0)
     this.player1.seek(0)
     if(this.player2!=null) {
-      this.player2.seek((this.state.recordingStartTime - this.state.videoStartTime)/1000.0, 0)
-      // this.player2.seek(0)
+      this.player2.seek(this.state.videoLag/1000.0, 0)
     }
-    console.log("AFTER SEEK")
 
     setTimeout(()=>{
       this.setState({paused: false})
@@ -349,15 +348,24 @@ class App extends Component {
     if(this.state.state=='recording') {
       //this info has very low time skew too
       var recorderElapsed = (new Date().getTime() - this.state.recordingStartTime)
-      var lag = recorderElapsed - playerElapsed
-      this.state.videoStartTime = this.state.recordingStartTime - lag
 
-      if(this.state.firstProgress) {
-        this.state.firstProgress = false
-        console.log("videoStartTime:     " + this.state.videoStartTime)
-        console.log("recordingStartTime: " + this.state.recordingStartTime)
-        console.log("player lag: " + lag + "ms")
+      //10ms was tested experimentally for better sounding on my iPhone
+      //must be evaluated on various devices
+      var customLagSkew = 10
+      var lag = recorderElapsed - playerElapsed - customLagSkew
+
+      //use min value because it will probably represent the sample with 
+      //less latency from notification queue
+      if(lag < this.state.videoLag) {
+        this.state.videoLag = lag
       }
+
+      // if(this.state.firstProgress) {
+      this.state.firstProgress = false
+      console.log("recordingStartTime: " + this.state.recordingStartTime)
+      console.log("videoStartTime:     " + this.state.recordingStartTime + this.state.videoLag)
+      console.log("player lag: " + (this.state.videoLag) + "ms")
+      // }
     }
   }
   onReadyForDisplay = (e) => {
