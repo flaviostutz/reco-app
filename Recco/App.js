@@ -21,10 +21,11 @@ import {
   StatusBar,
   Alert,
   TouchableOpacity,
+  Dimensions,
 } from 'react-native';
 
 import CameraRoll from "@react-native-community/cameraroll";
-import CameraRollPicker from 'react-native-camera-roll-picker';
+import CameraRollSelector from "react-native-camera-roll-selector";
 
 import {
   Header,
@@ -71,6 +72,9 @@ class App extends Component {
     playbackVideo: require('./res/test-30fps-360p.mp4'),
     saveToCameraRoll: true,
 
+    volume1: 0.5,
+    volume2: 1.0,
+
     firstProgress: true,
   };
 
@@ -78,116 +82,144 @@ class App extends Component {
 
     return (
       <>
-        <StatusBar barStyle="dark-content" />
         {this.state.videoPicker &&
-        <CameraRollPicker callback={this.onVideoSelected} 
+        <CameraRollSelector callback={this.onVideoSelected} 
                           assetType="Videos"
                           selectSingleItem={true} />
         }
+
         {!this.state.videoPicker &&
-        <SafeAreaView>
-          <ScrollView
-            contentInsetAdjustmentBehavior="automatic"
-            style={styles.scrollView}>
-            <View style={styles.body}>
-              <View style={styles.sectionContainer}>
-                <Text style={styles.sectionTitle}>Recco</Text>
-                {/* <Text style={styles.sectionDescription}>
-                  As soon as you click on a video it will start playing and a new recording will
-                  take place
-                </Text> */}
-              </View>
-              <View style={styles.sectionContainer}>
-                <TouchableOpacity onPress={() => {this.toggleRecording()}}>
-                  <RNCamera
-                    ref={ref => {
-                      this.camera = ref;
-                    }}
-                    style={styles.camera}
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          style={styles.scrollView}>
+          <View style={styles.body}>
+            <Text style={styles.sectionTitle}>Recco</Text>
+            <View style={styles.videoRegion}>
 
-                    //camera recording config
-                    type={this.state.type}
-                    ratio={this.state.ratio}
-                    flashMode={this.state.flash}
+              <TouchableOpacity onPress={() => {this.toggleRecording()}} 
+                style={[styles.backgroundVideo, this.borderRecording()]}>
+                <RNCamera
+                  ref={ref => {
+                    this.camera = ref;
+                  }}
+                  style={{flex: 1}}
 
-                    //events
-                    onAudioInterrupted={this.onAudioInterrupted}
-                    onAudioConnected={this.onAudioConnected}
-                    onRecordingStart={this.onRecordingStart}
-                    onRecordingEnd={this.onRecordingEnd}
-                    onCameraReady={this.onCameraReady}
-                    onMountError={this.onCameraMountError}
+                  //camera recording config
+                  type={this.state.type}
+                  ratio={this.state.ratio}
+                  flashMode={this.state.flash}
 
-                    //camera authorization matters
-                    onStatusChange={this.onCameraStatusChange}
-                    androidCameraPermissionOptions={{
-                      title: 'Permission to record camera video',
-                      message: 'We need access to your camera in order to record your track',
-                      buttonPositive: 'Ok',
-                      buttonNegative: 'Cancel',
-                    }}
-                    androidRecordAudioPermissionOptions={{
-                      title: 'Permission to record audio',
-                      message: 'We need access to your microphone in order to record your track',
-                      buttonPositive: 'Ok',
-                      buttonNegative: 'Cancel',
-                    }}
-                    pendingAuthorizationView={
-                      <SafeAreaView style={styles.cameraLoading}>
-                        <Spinner color={Colors.gray}/>
-                      </SafeAreaView>
-                    }
-                    notAuthorizedView={
-                      <View>
-                        Recco was not authorized to access media
-                      </View>
-                    }
-                  >
-                  </RNCamera>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.sectionContainer}>
-                <TouchableOpacity onPress={() => {this.selectVideo()}}>
-                  <Video source={this.state.playbackVideo}   // Can be a URL or a local file.
-                      ref={(ref) => {
-                        this.player1 = ref
-                      }}                                      // Store reference
-                      paused={this.state.paused}
-                      onBuffer={this.onBuffer}                // Callback when remote video is buffering
-                      onError={this.videoError}               // Callback when video cannot be loaded
-                      onLoad={this.onLoad}
-                      onLoadStart={this.onLoadStart}
-                      onProgress={this.onProgress}
-                      onSeek={this.onSeek1}
-                      onReadyForDisplay={this.onReadyForDisplay}
-                      bufferConfig={{}}
-                      style={styles.video1}
-                      playWhenInactive={true}
-                      playInBackground={true}
-                      pictureInPicture={true}
-                      volume={1.0} />
-                </TouchableOpacity>
-              </View>
-              {this.state.lastRecording != null && 
-              <TouchableOpacity onPress={() => {this.togglePlayRecorded()}}>
-                <View style={styles.sectionContainer}>
-                  <Video source={{uri: this.state.lastRecording.uri}}   // Can be a URL or a local file.
-                        ref={(ref) => {
-                          this.player2 = ref
-                        }}                                      // Store reference
-                        paused={this.state.paused}
-                        onError={this.onVideoError}               // Callback when video cannot be loaded
-                        onSeek={this.onSeek2}
-                        style={styles.video2} />
-                </View>
+                  //events
+                  onAudioInterrupted={this.onAudioInterrupted}
+                  onAudioConnected={this.onAudioConnected}
+                  onRecordingStart={this.onRecordingStart}
+                  onRecordingEnd={this.onRecordingEnd}
+                  onCameraReady={this.onCameraReady}
+                  onMountError={this.onCameraMountError}
+
+                  //camera authorization matters
+                  onStatusChange={this.onCameraStatusChange}
+                  androidCameraPermissionOptions={{
+                    title: 'Permission to record camera video',
+                    message: 'We need access to your camera in order to record your track',
+                    buttonPositive: 'Ok',
+                    buttonNegative: 'Cancel',
+                  }}
+                  androidRecordAudioPermissionOptions={{
+                    title: 'Permission to record audio',
+                    message: 'We need access to your microphone in order to record your track',
+                    buttonPositive: 'Ok',
+                    buttonNegative: 'Cancel',
+                  }}
+                  pendingAuthorizationView={
+                    <SafeAreaView style={styles.cameraLoading}>
+                      <Spinner color={Colors.gray}/>
+                    </SafeAreaView>
+                  }
+                  notAuthorizedView={
+                    <View>
+                      Recco was not authorized to access media
+                    </View>
+                  }
+                >
+                </RNCamera>
               </TouchableOpacity>
-              }
+
+              <TouchableOpacity onPress={() => {this.selectVideo()}}
+                style={[styles.overlayVideo, this.borderVideo()]}>
+                <Video source={this.state.playbackVideo}   // Can be a URL or a local file.
+                    ref={(ref) => {
+                      this.player1 = ref
+                    }}                                      // Store reference
+                    style={{flex:1}}
+                    paused={this.state.paused}
+                    onBuffer={this.onBuffer}                // Callback when remote video is buffering
+                    onError={this.videoError}               // Callback when video cannot be loaded
+                    onLoad={this.onLoad}
+                    onLoadStart={this.onLoadStart}
+                    onProgress={this.onProgress}
+                    onSeek={this.onSeek1}
+                    onReadyForDisplay={this.onReadyForDisplay}
+                    bufferConfig={{}}
+                    playWhenInactive={true}
+                    playInBackground={true}
+                    pictureInPicture={false}
+                    volume={this.state.volume1} />
+              </TouchableOpacity>
             </View>
-          </ScrollView>
-        </SafeAreaView>
+
+            {this.state.lastRecording != null && 
+            <TouchableOpacity onPress={() => {this.togglePlayRecorded()}}
+              style={[styles.overlayVideo, this.borderVideo()]}>
+              <Video source={{uri: this.state.lastRecording.uri}}   // Can be a URL or a local file.
+                    ref={(ref) => {
+                      this.player2 = ref
+                    }}
+                    style={{flex:1}}
+                    paused={this.state.paused}
+                    onError={this.onVideoError}               // Callback when video cannot be loaded
+                    onSeek={this.onSeek2}
+                    volume={this.state.volume2} />
+            </TouchableOpacity>
+            }
+          </View>
+        </ScrollView>
         }
       </>
     );
+  }
+
+  borderRecording = () => {
+    if(this.state.state == 'recording') {
+      return {
+        borderColor: "#FF0000",
+        borderRadius: 6,
+        borderWidth: 4,
+      }
+    }
+    return {}
+  }
+
+  borderVideo = () => {
+    if(this.state.state == 'idle') {
+      return {
+      }
+    }
+    if(this.state.state == 'recording' || this.state.state == 'playing') {
+      return {
+        borderColor: "#00FF00",
+        borderRadius: 6,
+        borderWidth: 2,
+      }
+    }
+    if(this.state.state == 'preparing') {
+      return {
+        borderColor: "yellow",
+        borderRadius: 6,
+        borderWidth: 2,
+      }
+    }
+    return {}
   }
 
   onVideoSelected = async (images, current) => {
@@ -199,7 +231,7 @@ class App extends Component {
   }
 
   selectVideo = async () => {
-
+    this.stopRecording()
     this.setState({videoPicker: true})
   }
 
@@ -223,8 +255,7 @@ class App extends Component {
         };
 
         console.log(new Date().getTime() + ' starting recording')
-        this.state.videoLag = Number.MAX_VALUE
-
+    
         // this.state.recordCommandTime = new Date().getTime()
         this.camera.recordAsync(options).then((result) => {
           console.log(new Date().getTime() + " finished recording")
@@ -253,6 +284,7 @@ class App extends Component {
     console.log("STOP RECORDING")
     if(this.camera && this.state.state=='recording'){
       this.camera.stopRecording();
+      this.stopVideo()
     }
   }
 
@@ -277,6 +309,7 @@ class App extends Component {
     // if(this.player2) {
     //   this.player2.seek(0)
     // }
+    this.state.state = 'idle'
     this.setState({paused: true})
   }
 
@@ -284,6 +317,7 @@ class App extends Component {
     if (!this.state.paused) {
       this.stopVideo()
     } else {
+      this.state.state = 'playing'
       this.startVideo()
     }
   }
@@ -303,6 +337,7 @@ class App extends Component {
     this.state.state = 'recording'
     console.log(new Date().getTime() + ' onRecordingStart')
     this.state.recordingStartTime = new Date().getTime()
+    this.state.videoLag = Number.MAX_VALUE
     this.startVideo()
   }
 
@@ -353,17 +388,18 @@ class App extends Component {
       //must be evaluated on various devices
       var customLagSkew = 10
       var lag = recorderElapsed - playerElapsed - customLagSkew
+      console.log("lag=" + lag)
 
       //use min value because it will probably represent the sample with 
       //less latency from notification queue
-      if(lag < this.state.videoLag) {
+      if(lag > 100 && lag < this.state.videoLag) {
         this.state.videoLag = lag
       }
 
       // if(this.state.firstProgress) {
       this.state.firstProgress = false
       console.log("recordingStartTime: " + this.state.recordingStartTime)
-      console.log("videoStartTime:     " + this.state.recordingStartTime + this.state.videoLag)
+      console.log("videoStartTime:     " + (this.state.recordingStartTime + this.state.videoLag))
       console.log("player lag: " + (this.state.videoLag) + "ms")
       // }
     }
@@ -374,7 +410,7 @@ class App extends Component {
 
 };
 
-
+const { height } = Dimensions.get("window");
 const styles = StyleSheet.create({
   scrollView: {
     backgroundColor: Colors.lighter,
@@ -413,17 +449,27 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   camera: {
-    paddingTop: 10,
-    height: 250,
+    height: 100,
   },
-  video1: {
-    paddingTop: 10,
-    height: 250,
+  videoRegion: {
+    justifyContent: "space-between"
   },
-  video2: {
-    paddingTop: 10,
-    height: 250,
+  overlayVideo: {
+    width: 200,
+    height: 200,
+    zIndex: 10,
+    margin: 10,
   },
+  backgroundVideo: {
+    height: height,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    alignItems: "stretch",
+    bottom: 0,
+    right: 0,
+    zIndex: -99
+  }
 });
 
 export default App;
