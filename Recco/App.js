@@ -71,16 +71,8 @@ class App extends Component {
 
     lagCounter: 0,
     lagTotal: 0,
-    measuringLag: true,
-    initialLag: 700,
-    avgLag: 700,
+  };  
 
-    recordCommandTime: null,
-    recordCommandLag: null,
-    playCommandTime: null,
-    playCommandLag: null,
-    firstProgress: true,
-  };
 
 // const App: () => React$Node = () => {
   render() {
@@ -167,7 +159,6 @@ class App extends Component {
                       onLoad={this.onLoad}
                       onLoadStart={this.onLoadStart}
                       onProgress={this.onProgress}
-                      onSeek={this.onSeek}
                       onReadyForDisplay={this.onReadyForDisplay}
                       bufferConfig={{}}
                       style={styles.video1}
@@ -231,10 +222,12 @@ class App extends Component {
           maxFileSize: 200 * 1024 * 1024
         };
 
-        var recordForMeasurements = this.state.measuringLag
+        var startVideoDelay = 500
+        if(this.state.lagCounter>0) {
+          startVideoDelay = (this.state.lagTotal / this.state.lagCounter) + 500
+        }
 
         console.log(new Date().getTime() + ' starting recording')
-        this.state.recordCommandTime = new Date().getTime()
         this.camera.recordAsync(options).then((result) => {
           console.log(new Date().getTime() + " finished recording")
           this.stopVideo()
@@ -242,7 +235,7 @@ class App extends Component {
           // Alert.alert("Video recorded!", JSON.stringify(result));
           this.setState({lastRecording: result})
     
-          if(!recordForMeasurements && this.state.saveToCameraRoll) {
+          if(this.state.saveToCameraRoll) {
             CameraRoll.saveToCameraRoll(result.uri, "video").then(() => {
               console.log("Video saved to camera roll successfuly");
             }).catch((err) => {
@@ -254,11 +247,11 @@ class App extends Component {
           console.warn("Video recording error. err=" + err);
         })
 
-        console.log("Playback delay: " + this.state.avgLag + "ms")
+        console.log("Playback delay: " + startVideoDelay + "ms")
 
         setTimeout(()=>{
           this.startVideo()
-        }, this.state.avgLag);
+        }, startVideoDelay);
       
       });
     }
@@ -272,19 +265,19 @@ class App extends Component {
   }
 
   startVideo = (e) => {
-    this.state.playCommandTime = new Date().getTime()
-    this.state.firstProgress = true
-    this.setState({paused: false})
-    console.log(new Date().getTime() + " startVideo")
+    this.setState({paused: false}, async () => {
+      console.log(new Date().getTime() + " startVideo")
+    })
   }
 
   stopVideo = (e) => {
-    this.setState({paused: true})
-    console.log(new Date().getTime() + " stopVideo")
-    this.player1.seek(0)
-    if(this.player2) {
-      this.player2.seek(0)
-    }
+    this.setState({paused: true}, async () => {
+      console.log(new Date().getTime() + " stopVideo")
+      this.player1.seek(0)
+      if(this.player2) {
+        this.player2.seek(0)
+      }
+    })
   }
 
   togglePlayRecorded = async () => {
@@ -307,11 +300,6 @@ class App extends Component {
   }
 
   onRecordingStart = (e) => {
-    if(this.state.recordCommandTime>0) {
-      this.state.recordCommandLag = new Date().getTime() - this.state.recordCommandTime
-      console.log("Record command lag: " + this.state.recordCommandLag + "ms")
-    }
-
     this.state.state = 'recording'
     this.state.lastRecordingActualStartTime = new Date().getTime(),
     // this.state.recordingTriggerTime = (this.state.lastRecordingActualTime - this.state.lastRecordingTime)
@@ -341,57 +329,23 @@ class App extends Component {
   onLoadStart = (e) => {
     console.log(new Date().getTime() + ' onLoadStart')
   }
-  onSeek = (e) => {
-    console.log(new Date().getTime() + ' onSeek')
-  }
   onProgress = (e) => {
-    if(this.state.firstProgress) {
-      this.state.playCommandLag = new Date().getTime() - this.state.playCommandTime
-      console.log("Play command lag: " + this.state.playCommandLag + "ms")
-      this.state.firstProgress = false
-      // this.state.playCommandTime = 0
-    }
-
-    //this info has very low time skew
     var playerElapsed = e.currentTime * 1000
 
     if(this.state.state=='recording') {
-      //this info has very low time skew too
       var recorderElapsed = (new Date().getTime() - this.state.lastRecordingActualStartTime)
-      var lag = playerElapsed - recorderElapsed
-      console.log(new Date().getTime() + ' onProgress ' + playerElapsed + ' lag ' + (lag) + "ms")
-
-      if(this.state.firstProgress) {
-        var videoActualStartTime = this.state.lastRecordingActualStartTime + lag
-        console.log("videoActualStartTime:   " + videoActualStartTime + "ms")
-        console.log("recordingActualStartTime: " + this.state.lastRecordingActualStartTime + "ms")
-      }
-
-      if(this.state.measuringLag) {
+      if(this.state.lagCounter<10) {
+        console.log(new Date().getTime() + ' onProgress measure lag - ' + (playerElapsed - recorderElapsed) + "ms")
         this.state.lagCounter++
-        this.state.lagTotal += lag
-        console.log(new Date().getTime() + ' avglag=' + (this.state.lagTotal/this.state.lagCounter)+this.state.initialLag + "ms")
-        if(this.state.lagCounter>=10) {
-          this.state.avgLag = (this.state.lagTotal/this.state.lagCounter) + this.state.initialLag
-          this.state.measuringLag = false
-          console.log("Lag measurement finished")
-          this.stopRecording()
-        }
+        this.state.lagTotal += (playerElapsed - recorderElapsed)
       }
-
-      // var pe = lag + this.state.recordCommandLag - this.state.avgLag - this.state.playCommandLag
-      // console.log("PE=" + pe)
-
-      if(!this.state.measuringLag) {
-        if(lag < -10) {
-          this.player1.seek(e.currentTime - lag/1000.0, 0)
-        }
-      } 
     }
   }
   onReadyForDisplay = (e) => {
     console.log(new Date().getTime() + ' onReadyForDisplay')
   }
+
+
 
 };
 
