@@ -18,6 +18,7 @@ import {
   ScrollView,
   View,
   Text,
+  Image,
   StatusBar,
   Alert,
   TouchableOpacity,
@@ -69,16 +70,34 @@ class App extends Component {
     videoLag: null,
 
     videoPicker: false,
-    playbackVideo: require('./res/test-30fps-360p.mp4'),
     saveToCameraRoll: true,
 
     volume1: 0.5,
     volume2: 1.0,
 
     firstProgress: true,
+
+    cameraRollImage: null,
   };
 
   render() {
+
+    if(this.state.cameraRollImage==null) {
+      var options = {
+        first: 1,
+        assetType: "Videos"
+      }
+      CameraRoll.getPhotos(options).then((photos) => {
+        if(photos.edges.length>0) {
+          console.log('video preview found ' + JSON.stringify(photos))
+          this.setState({cameraRollImage: {uri: this.phToAssetsUri(photos.edges[0].node.image.uri)}})
+        } else {
+          this.setState({cameraRollImage: require('./res/test-30fps-360p.mp4')})
+        }
+      }).catch((err) => {
+        console.warn('Error getting photo: ' + err)
+      })
+    }
 
     return (
       <>
@@ -89,101 +108,114 @@ class App extends Component {
         }
 
         {!this.state.videoPicker &&
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <View style={styles.body}>
-            <Text style={styles.sectionTitle}>Recco</Text>
-            <View style={styles.videoRegion}>
+        <View style={{flex:1}}>
+          {/* <TouchableOpacity onPress={() => {this.toggleRecording()}}  */}
+          <RNCamera
+            ref={ref => {
+              this.camera = ref;
+            }}
+            style={[styles.backgroundVideo, this.borderRecording()]}
 
-              <TouchableOpacity onPress={() => {this.toggleRecording()}} 
-                style={[styles.backgroundVideo, this.borderRecording()]}>
-                <RNCamera
-                  ref={ref => {
-                    this.camera = ref;
-                  }}
-                  style={{flex: 1}}
+            //camera recording config
+            type={this.state.type}
+            ratio={this.state.ratio}
+            flashMode={this.state.flash}
 
-                  //camera recording config
-                  type={this.state.type}
-                  ratio={this.state.ratio}
-                  flashMode={this.state.flash}
+            //events
+            onAudioInterrupted={this.onAudioInterrupted}
+            onAudioConnected={this.onAudioConnected}
+            onRecordingStart={this.onRecordingStart}
+            onRecordingEnd={this.onRecordingEnd}
+            onCameraReady={this.onCameraReady}
+            onMountError={this.onCameraMountError}
 
-                  //events
-                  onAudioInterrupted={this.onAudioInterrupted}
-                  onAudioConnected={this.onAudioConnected}
-                  onRecordingStart={this.onRecordingStart}
-                  onRecordingEnd={this.onRecordingEnd}
-                  onCameraReady={this.onCameraReady}
-                  onMountError={this.onCameraMountError}
-
-                  //camera authorization matters
-                  onStatusChange={this.onCameraStatusChange}
-                  androidCameraPermissionOptions={{
-                    title: 'Permission to record camera video',
-                    message: 'We need access to your camera in order to record your track',
-                    buttonPositive: 'Ok',
-                    buttonNegative: 'Cancel',
-                  }}
-                  androidRecordAudioPermissionOptions={{
-                    title: 'Permission to record audio',
-                    message: 'We need access to your microphone in order to record your track',
-                    buttonPositive: 'Ok',
-                    buttonNegative: 'Cancel',
-                  }}
-                  pendingAuthorizationView={
-                    <SafeAreaView style={styles.cameraLoading}>
-                      <Spinner color={Colors.gray}/>
-                    </SafeAreaView>
-                  }
-                  notAuthorizedView={
-                    <View>
-                      Recco was not authorized to access media
-                    </View>
-                  }
-                >
-                </RNCamera>
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={() => {this.selectVideo()}}
-                style={[styles.overlayVideo, this.borderVideo()]}>
-                <Video source={this.state.playbackVideo}   // Can be a URL or a local file.
-                    ref={(ref) => {
-                      this.player1 = ref
-                    }}                                      // Store reference
-                    style={{flex:1}}
-                    paused={this.state.paused}
-                    onBuffer={this.onBuffer}                // Callback when remote video is buffering
-                    onError={this.videoError}               // Callback when video cannot be loaded
-                    onLoad={this.onLoad}
-                    onLoadStart={this.onLoadStart}
-                    onProgress={this.onProgress}
-                    onSeek={this.onSeek1}
-                    onReadyForDisplay={this.onReadyForDisplay}
-                    bufferConfig={{}}
-                    playWhenInactive={true}
-                    playInBackground={true}
-                    pictureInPicture={false}
-                    volume={this.state.volume1} />
-              </TouchableOpacity>
-            </View>
-
-            {this.state.lastRecording != null && 
-            <TouchableOpacity onPress={() => {this.togglePlayRecorded()}}
-              style={[styles.overlayVideo, this.borderVideo()]}>
-              <Video source={{uri: this.state.lastRecording.uri}}   // Can be a URL or a local file.
-                    ref={(ref) => {
-                      this.player2 = ref
-                    }}
-                    style={{flex:1}}
-                    paused={this.state.paused}
-                    onError={this.onVideoError}               // Callback when video cannot be loaded
-                    onSeek={this.onSeek2}
-                    volume={this.state.volume2} />
-            </TouchableOpacity>
+            //camera authorization matters
+            onStatusChange={this.onCameraStatusChange}
+            androidCameraPermissionOptions={{
+              title: 'Permission to record camera video',
+              message: 'We need access to your camera in order to record your track',
+              buttonPositive: 'Ok',
+              buttonNegative: 'Cancel',
+            }}
+            androidRecordAudioPermissionOptions={{
+              title: 'Permission to record audio',
+              message: 'We need access to your microphone in order to record your track',
+              buttonPositive: 'Ok',
+              buttonNegative: 'Cancel',
+            }}
+            pendingAuthorizationView={
+              <SafeAreaView style={styles.cameraLoading}>
+                <Spinner color={Colors.gray}/>
+              </SafeAreaView>
             }
+            notAuthorizedView={
+              <View>
+                Recco was not authorized to access media
+              </View>
+            }
+          >
+          </RNCamera>
+
+          <View style={styles.header}>
+            <Text style={styles.title}>Recco</Text>
           </View>
-        </ScrollView>
+
+          <ScrollView
+            contentInsetAdjustmentBehavior="automatic"
+            style={styles.scrollView}>
+            <View>
+              <View style={styles.scrollRegion}>
+                <TouchableOpacity onPress={() => {this.selectVideo()}}
+                  style={[styles.overlayVideo, this.borderVideo()]}>
+                  <Video source={this.state.playbackVideo}   // Can be a URL or a local file.
+                      ref={(ref) => {
+                        this.player1 = ref
+                      }}                                      // Store reference
+                      style={{flex:1}}
+                      paused={this.state.paused}
+                      onBuffer={this.onBuffer}                // Callback when remote video is buffering
+                      onError={this.videoError}               // Callback when video cannot be loaded
+                      onLoad={this.onLoad}
+                      onLoadStart={this.onLoadStart}
+                      onProgress={this.onProgress}
+                      onSeek={this.onSeek1}
+                      onReadyForDisplay={this.onReadyForDisplay}
+                      bufferConfig={{}}
+                      playWhenInactive={true}
+                      playInBackground={true}
+                      pictureInPicture={false}
+                      volume={this.state.volume1} />
+                </TouchableOpacity>
+              </View>
+
+              {this.state.lastRecording != null && 
+              <TouchableOpacity onPress={() => {this.togglePlayRecorded()}}
+                style={[styles.overlayVideo, this.borderVideo()]}>
+                <Video source={{uri: this.state.lastRecording.uri}}   // Can be a URL or a local file.
+                      ref={(ref) => {
+                        this.player2 = ref
+                      }}
+                      style={{flex:1}}
+                      paused={this.state.paused}
+                      onError={this.onVideoError}               // Callback when video cannot be loaded
+                      onSeek={this.onSeek2}
+                      volume={this.state.volume2} />
+              </TouchableOpacity>
+              }
+            </View>
+          </ScrollView>
+
+          <View style={styles.footer}>
+            <View style={{flexDirection:'row-reverse'}}>
+              <Video source={this.state.cameraRollImage} 
+                paused={true}
+                style={styles.rollThumb} />
+              <Text style={styles.plusSign}>+</Text>
+            </View>
+            <Text>aaaadsfaf adfasdfasfd</Text>
+            <Text style={styles.rollThumb} />
+          </View>
+        </View>
         }
       </>
     );
@@ -222,12 +254,15 @@ class App extends Component {
     return {}
   }
 
+  phToAssetsUri(phUri) {
+    const ext='mp4'
+    const appleId = phUri.substring(5, 41);
+    return `assets-library://asset/asset.${ext}?id=${appleId}&ext=${ext}`;
+  }
+
   onVideoSelected = async (images, current) => {
     console.log("VIDEO URI: " + current.uri)
-    const ext='mp4'
-    const appleId = current.uri.substring(5, 41);
-    const uri = `assets-library://asset/asset.${ext}?id=${appleId}&ext=${ext}`;
-    this.setState({videoPicker: false, playbackVideo: {uri: uri}})
+    this.setState({videoPicker: false, playbackVideo: {uri: phToAssetsUri(current.uri)}})
   }
 
   selectVideo = async () => {
@@ -384,9 +419,9 @@ class App extends Component {
       //this info has very low time skew too
       var recorderElapsed = (new Date().getTime() - this.state.recordingStartTime)
 
-      //10ms was tested experimentally for better sounding on my iPhone
+      //this skew was added experimentally for better sounding on my iPhone
       //must be evaluated on various devices
-      var customLagSkew = 10
+      var customLagSkew = 5
       var lag = recorderElapsed - playerElapsed - customLagSkew
       console.log("lag=" + lag)
 
@@ -410,48 +445,45 @@ class App extends Component {
 
 };
 
+class Track {
+  constructor(uri, guideLag, volume, audioMute, videoMute, order) {
+    this.uri = uri
+    this.guideLag = guideLag
+    this.volume = volume
+    this.audioMute = audioMute
+    this.videoMute = videoMute
+    this.order = order
+  }
+}
+
 const { height } = Dimensions.get("window");
 const styles = StyleSheet.create({
-  scrollView: {
-    backgroundColor: Colors.lighter,
-  },
-  engine: {
-    position: 'absolute',
-    right: 0,
-  },
-  body: {
-    backgroundColor: Colors.white,
-  },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
+
+  header: {
     padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
+    height: 60,
+    borderWidth: 2
   },
-  camera: {
-    height: 100,
+  title: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: 'darkred',
+    height: 200,
+    top: 18
   },
-  videoRegion: {
+
+  backgroundVideo: {
+    height: height,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    // justifyContent: "space-between",
+    // alignItems: "stretch",
+    bottom: 0,
+    right: 0,
+    zIndex: -99
+  },
+  scrollRegion: {
     justifyContent: "space-between"
   },
   overlayVideo: {
@@ -460,16 +492,26 @@ const styles = StyleSheet.create({
     zIndex: 10,
     margin: 10,
   },
-  backgroundVideo: {
-    height: height,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    alignItems: "stretch",
-    bottom: 0,
-    right: 0,
-    zIndex: -99
+
+  footer: {
+    padding: 14,
+    height: 84,
+    borderWidth: 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+  rollThumb: {
+    width: 50,
+    height: 50,
+    borderWidth: 2
+  },
+  plusSign: {
+    fontSize:25, 
+    fontWeight:'600', 
+    color:'white', 
+    position:'absolute'
   }
+
 });
 
 export default App;
