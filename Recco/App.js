@@ -36,6 +36,11 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
+import { Icon } from 'react-native-elements'
+
+// import Icon from 'react-native-vector-icons/dist/FontAwesome';
+// Icon.loadFont();
+
 import { Spinner } from 'native-base';
 
 import { RNCamera } from 'react-native-camera';
@@ -72,6 +77,8 @@ class App extends Component {
     videoPicker: false,
     saveToCameraRoll: true,
 
+    tracks: [],
+
     volume1: 0.5,
     volume2: 1.0,
 
@@ -82,6 +89,8 @@ class App extends Component {
 
   render() {
 
+    console.log(this.state.tracks)
+
     if(this.state.cameraRollImage==null) {
       var options = {
         first: 1,
@@ -89,10 +98,9 @@ class App extends Component {
       }
       CameraRoll.getPhotos(options).then((photos) => {
         if(photos.edges.length>0) {
-          console.log('video preview found ' + JSON.stringify(photos))
           this.setState({cameraRollImage: {uri: this.phToAssetsUri(photos.edges[0].node.image.uri)}})
         } else {
-          this.setState({cameraRollImage: require('./res/test-30fps-360p.mp4')})
+          this.setState(require('./res/test-30fps-360p.mp4'))
         }
       }).catch((err) => {
         console.warn('Error getting photo: ' + err)
@@ -109,7 +117,6 @@ class App extends Component {
 
         {!this.state.videoPicker &&
         <View style={{flex:1}}>
-          {/* <TouchableOpacity onPress={() => {this.toggleRecording()}}  */}
           <RNCamera
             ref={ref => {
               this.camera = ref;
@@ -165,30 +172,31 @@ class App extends Component {
             style={styles.scrollView}>
             <View>
               <View style={styles.scrollRegion}>
-                <TouchableOpacity onPress={() => {this.selectVideo()}}
-                  style={[styles.overlayVideo, this.borderVideo()]}>
-                  <Video source={this.state.playbackVideo}   // Can be a URL or a local file.
+
+                {/* {this.sortedTracks().map(t =>  */}
+                {this.state.tracks.map(t => {
+                <TouchableOpacity onPress={() => {this.showTrackDialog(t)}}
+                    style={[styles.overlayVideo, this.borderVideo(t)]}>
+                  <Video source={t.source}
                       ref={(ref) => {
-                        this.player1 = ref
-                      }}                                      // Store reference
+                        this.t.player = ref
+                      }}
                       style={{flex:1}}
                       paused={this.state.paused}
-                      onBuffer={this.onBuffer}                // Callback when remote video is buffering
-                      onError={this.videoError}               // Callback when video cannot be loaded
+                      onBuffer={this.onBuffer}
+                      onError={this.onVideoError}
                       onLoad={this.onLoad}
                       onLoadStart={this.onLoadStart}
                       onProgress={this.onProgress}
                       onSeek={this.onSeek1}
                       onReadyForDisplay={this.onReadyForDisplay}
-                      bufferConfig={{}}
-                      playWhenInactive={true}
-                      playInBackground={true}
-                      pictureInPicture={false}
-                      volume={this.state.volume1} />
+                      volume={t.volume} />
                 </TouchableOpacity>
+                })}
+
               </View>
 
-              {this.state.lastRecording != null && 
+              {/* {this.state.lastRecording != null && 
               <TouchableOpacity onPress={() => {this.togglePlayRecorded()}}
                 style={[styles.overlayVideo, this.borderVideo()]}>
                 <Video source={{uri: this.state.lastRecording.uri}}   // Can be a URL or a local file.
@@ -201,24 +209,78 @@ class App extends Component {
                       onSeek={this.onSeek2}
                       volume={this.state.volume2} />
               </TouchableOpacity>
-              }
+              } */}
             </View>
           </ScrollView>
 
           <View style={styles.footer}>
-            <View style={{flexDirection:'row-reverse'}}>
-              <Video source={this.state.cameraRollImage} 
-                paused={true}
-                style={styles.rollThumb} />
-              <Text style={styles.plusSign}>+</Text>
-            </View>
-            <Text>aaaadsfaf adfasdfasfd</Text>
-            <Text style={styles.rollThumb} />
+            <TouchableOpacity onPress={() => {this.selectVideo()}}>
+              <View style={{flexDirection:'row-reverse'}}>
+                <View>
+                  {this.state.cameraRollImage!=null &&
+                  <Video source={this.state.cameraRollImage} 
+                    paused={true}
+                    style={styles.rollThumb}
+                   />
+                  }
+                </View>
+                <Text style={styles.plusSign}>+</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {this.toggleRecording()}} style={{borderWidth:4}}>
+              <Icon
+                name={this.recordIcon()}
+                type='entypo'
+                color='#ee4400'
+                size={74} 
+                style={{padding:8}} />
+            </TouchableOpacity>
+
+            {this.state.tracks.length>0 &&
+            <TouchableOpacity onPress={() => {this.togglePlaying()}} style={styles.rollThumb}>
+              <Icon
+                name={this.playIcon()}
+                type='entypo'
+                color='#ee4400'
+                size={58} 
+                style={{padding:8}} />
+            </TouchableOpacity>
+            }
+            {this.state.tracks.length==0 &&
+            <Text style={styles.rollThumb}></Text>
+            }
           </View>
         </View>
         }
       </>
     );
+  }
+
+  showTrackDialog(track) {
+    console.log("TRACK DIALOG")
+    console.log(track)
+  }
+
+  sortedTracks = () => {
+    return this.state.tracks.sort((a,b) => {
+      return a.order < b.order
+    })
+  }
+
+  recordIcon = () => {
+    if(this.state.state=='recording') {
+      return 'controller-stop'
+    } else {
+      return'controller-record'
+    }
+  }
+
+  playIcon = () => {
+    if(this.state.state=='recording') {
+      return 'controller-paus'
+    } else {
+      return'controller-play'
+    }
   }
 
   borderRecording = () => {
@@ -232,10 +294,12 @@ class App extends Component {
     return {}
   }
 
-  borderVideo = () => {
+  borderVideo = (track) => {
+    if(track.audioMute && track.videoMute) {
+      return {borderWidth:4}
+    }
     if(this.state.state == 'idle') {
-      return {
-      }
+      return {borderWidth:4}
     }
     if(this.state.state == 'recording' || this.state.state == 'playing') {
       return {
@@ -251,7 +315,7 @@ class App extends Component {
         borderWidth: 2,
       }
     }
-    return {}
+    return {borderWidth:4}
   }
 
   phToAssetsUri(phUri) {
@@ -261,8 +325,15 @@ class App extends Component {
   }
 
   onVideoSelected = async (images, current) => {
-    console.log("VIDEO URI: " + current.uri)
-    this.setState({videoPicker: false, playbackVideo: {uri: phToAssetsUri(current.uri)}})
+    console.log("ADDING NEW TRACK FROM CAMERA ROLL " + current.uri)
+
+    var tracks = this.state.tracks
+    var t = new Track(
+      {source: this.phToAssetsUri(current.uri)},
+      1.0, false, false, tracks.length, 0
+    )
+    tracks.push(t)
+    this.setState({videoPicker: false, tracks: tracks})
   }
 
   selectVideo = async () => {
@@ -299,13 +370,21 @@ class App extends Component {
           // Alert.alert("Video recorded!", JSON.stringify(result));
           this.setState({lastRecording: result})
     
-          if(this.state.saveToCameraRoll) {
-            CameraRoll.saveToCameraRoll(result.uri, "video").then(() => {
-              console.log("Video saved to camera roll successfuly");
-            }).catch((err) => {
-              console.warn("Failed to store recorded video: " + err.message);
-            });
-          }
+          // if(this.state.saveToCameraRoll) {
+          CameraRoll.saveToCameraRoll(result.uri, "video").then((uri) => {
+            console.log("Video saved to camera roll successfuly");
+            console.log("ADDING NEW TRACK FROM RECORDING")
+            var tracks = this.state.tracks
+            var t = new Track(
+              {source: this.phToAssetsUri(uri)},
+              1.0, false, false, tracks.length, this.state.videoLag
+            )
+            tracks.push(t)
+            this.setState({videoPicker: false, tracks: tracks})
+          }).catch((err) => {
+            console.warn("Failed to store recorded video: " + err.message);
+          });
+          // }
 
         }).catch((err) => {
           console.warn("Video recording error. err=" + err);
@@ -348,8 +427,8 @@ class App extends Component {
     this.setState({paused: true})
   }
 
-  togglePlayRecorded = async () => {
-    if (!this.state.paused) {
+  togglePlaying = async () => {
+    if (this.state.state=='playing') {
       this.stopVideo()
     } else {
       this.state.state = 'playing'
@@ -446,13 +525,14 @@ class App extends Component {
 };
 
 class Track {
-  constructor(uri, guideLag, volume, audioMute, videoMute, order) {
-    this.uri = uri
-    this.guideLag = guideLag
+  constructor(source, volume, audioMute, videoMute, order, toffset) {
+    this.source = source
     this.volume = volume
     this.audioMute = audioMute
     this.videoMute = videoMute
     this.order = order
+    this.toffset = toffset
+    this.player = null
   }
 }
 
@@ -494,16 +574,17 @@ const styles = StyleSheet.create({
   },
 
   footer: {
-    padding: 14,
-    height: 84,
+    padding: 0,
+    height: 110,
     borderWidth: 2,
     flexDirection: 'row',
     justifyContent: 'space-between'
   },
   rollThumb: {
-    width: 50,
-    height: 50,
-    borderWidth: 2
+    width: 80,
+    height: 80,
+    borderWidth: 2,
+    margin: 14
   },
   plusSign: {
     fontSize:25, 
