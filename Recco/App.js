@@ -78,12 +78,6 @@ class App extends Component {
     saveToCameraRoll: true,
 
     tracks: [],
-
-    volume1: 0.5,
-    volume2: 1.0,
-
-    firstProgress: true,
-
     cameraRollImage: null,
   };
 
@@ -173,26 +167,25 @@ class App extends Component {
             <View>
               <View style={styles.scrollRegion}>
 
-                {/* {this.sortedTracks().map(t =>  */}
-                {this.state.tracks.map(t => {
+                {this.state.tracks.map((t) => (
                 <TouchableOpacity onPress={() => {this.showTrackDialog(t)}}
-                    style={[styles.overlayVideo, this.borderVideo(t)]}>
+                  style={[styles.overlayVideo, this.borderVideo(t)]}>
                   <Video source={t.source}
-                      ref={(ref) => {
-                        this.t.player = ref
-                      }}
-                      style={{flex:1}}
-                      paused={this.state.paused}
-                      onBuffer={this.onBuffer}
-                      onError={this.onVideoError}
-                      onLoad={this.onLoad}
-                      onLoadStart={this.onLoadStart}
-                      onProgress={this.onProgress}
-                      onSeek={this.onSeek1}
-                      onReadyForDisplay={this.onReadyForDisplay}
-                      volume={t.volume} />
+                    ref={(ref) => {
+                      t.player = ref
+                    }}
+                    style={{flex:1}}
+                    paused={this.state.paused}
+                    onBuffer={this.onBuffer}
+                    onError={this.onVideoError}
+                    onLoad={this.onLoad}
+                    onLoadStart={this.onLoadStart}
+                    onProgress={this.onProgress}
+                    onSeek={this.onSeek}
+                    onReadyForDisplay={this.onReadyForDisplay}
+                    volume={t.volume} />
                 </TouchableOpacity>
-                })}
+                ))}
 
               </View>
 
@@ -257,7 +250,7 @@ class App extends Component {
   }
 
   showTrackDialog(track) {
-    console.log("TRACK DIALOG")
+    console.log("TRACK DIALOG ")
     console.log(track)
   }
 
@@ -276,8 +269,8 @@ class App extends Component {
   }
 
   playIcon = () => {
-    if(this.state.state=='recording') {
-      return 'controller-paus'
+    if(this.state.state=='playing') {
+      return 'controller-stop'
     } else {
       return'controller-play'
     }
@@ -325,11 +318,11 @@ class App extends Component {
   }
 
   onVideoSelected = async (images, current) => {
-    console.log("ADDING NEW TRACK FROM CAMERA ROLL " + current.uri)
+    console.log("ADDING NEW TRACK FROM CAMERA ROLL " + this.phToAssetsUri(current.uri))
 
     var tracks = this.state.tracks
     var t = new Track(
-      {source: this.phToAssetsUri(current.uri)},
+      {uri:this.phToAssetsUri(current.uri)},
       1.0, false, false, tracks.length, 0
     )
     tracks.push(t)
@@ -342,10 +335,10 @@ class App extends Component {
   }
 
   toggleRecording = async () => {
-    if (this.state.state != 'idle') {
-      this.stopRecording()
-    } else {
+    if (this.state.state == 'idle') {
       this.startRecording()
+    } else {
+      this.stopRecording()
     }
   }
   
@@ -373,10 +366,10 @@ class App extends Component {
           // if(this.state.saveToCameraRoll) {
           CameraRoll.saveToCameraRoll(result.uri, "video").then((uri) => {
             console.log("Video saved to camera roll successfuly");
-            console.log("ADDING NEW TRACK FROM RECORDING")
+            console.log("ADDING NEW TRACK FROM RECORDING " + this.phToAssetsUri(uri))
             var tracks = this.state.tracks
             var t = new Track(
-              {source: this.phToAssetsUri(uri)},
+              {uri: this.phToAssetsUri(uri)},
               1.0, false, false, tracks.length, this.state.videoLag
             )
             tracks.push(t)
@@ -404,17 +397,14 @@ class App extends Component {
 
   startVideo = (e) => {
     console.log(new Date().getTime() + " startVideo")
-    this.state.firstProgress = true
 
-    //sync recording
-    this.player1.seek(0)
-    if(this.player2!=null) {
-      this.player2.seek(this.state.videoLag/1000.0, 0)
-    }
+    this.state.tracks.forEach(t => {
+      t.player.seek(t.toffset/1000.0, 0)
+    })
 
     setTimeout(()=>{
       this.setState({paused: false})
-    }, 1000);
+    }, 500);
   }
 
   stopVideo = (e) => {
@@ -482,12 +472,8 @@ class App extends Component {
   onLoadStart = (e) => {
     console.log(new Date().getTime() + ' onLoadStart')
   }
-  onSeek1 = (e) => {
-    console.log(new Date().getTime() + ' onSeek1 ')
-    console.log(e)
-  }
-  onSeek2 = (e) => {
-    console.log(new Date().getTime() + ' onSeek2 ')
+  onSeek = (e) => {
+    console.log(new Date().getTime() + ' onSeek ')
     console.log(e)
   }
   onProgress = (e) => {
@@ -510,8 +496,6 @@ class App extends Component {
         this.state.videoLag = lag
       }
 
-      // if(this.state.firstProgress) {
-      this.state.firstProgress = false
       console.log("recordingStartTime: " + this.state.recordingStartTime)
       console.log("videoStartTime:     " + (this.state.recordingStartTime + this.state.videoLag))
       console.log("player lag: " + (this.state.videoLag) + "ms")
