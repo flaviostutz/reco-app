@@ -47,6 +47,9 @@ import { RNCamera } from 'react-native-camera';
 
 import Video from 'react-native-video';
 
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
+
 class App extends Component {
   constructor(props) {
     super(props);
@@ -72,13 +75,15 @@ class App extends Component {
     lastRecording: null,
 
     recordingStartTime: null,
-    videoLag: null,
+    referenceVideoRecordLag: null,
+    referenceTrackId: null,
 
     videoPicker: false,
     saveToCameraRoll: true,
 
     tracks: [],
     cameraRollImage: null,
+
   };
 
   render() {
@@ -176,33 +181,19 @@ class App extends Component {
                     }}
                     style={{flex:1}}
                     paused={this.state.paused}
-                    onBuffer={this.onBuffer}
-                    onError={this.onVideoError}
-                    onLoad={this.onLoad}
-                    onLoadStart={this.onLoadStart}
-                    onProgress={this.onProgress}
-                    onSeek={this.onSeek}
-                    onReadyForDisplay={this.onReadyForDisplay}
+                    onProgress={t.onProgress}
+                    onError={t.onError}
+                    // onLoad={this.onLoad}
+                    // onLoadStart={this.onLoadStart}
+                    // onBuffer={this.onBuffer}
+                    // onSeek={this.onSeek}
+                    // onReadyForDisplay={this.onReadyForDisplay}
                     volume={t.volume} />
                 </TouchableOpacity>
                 ))}
 
               </View>
 
-              {/* {this.state.lastRecording != null && 
-              <TouchableOpacity onPress={() => {this.togglePlayRecorded()}}
-                style={[styles.overlayVideo, this.borderVideo()]}>
-                <Video source={{uri: this.state.lastRecording.uri}}   // Can be a URL or a local file.
-                      ref={(ref) => {
-                        this.player2 = ref
-                      }}
-                      style={{flex:1}}
-                      paused={this.state.paused}
-                      onError={this.onVideoError}               // Callback when video cannot be loaded
-                      onSeek={this.onSeek2}
-                      volume={this.state.volume2} />
-              </TouchableOpacity>
-              } */}
             </View>
           </ScrollView>
 
@@ -320,13 +311,23 @@ class App extends Component {
   onVideoSelected = async (images, current) => {
     console.log("ADDING NEW TRACK FROM CAMERA ROLL " + this.phToAssetsUri(current.uri))
 
-    var tracks = this.state.tracks
     var t = new Track(
+      uuidv4(),
       {uri:this.phToAssetsUri(current.uri)},
-      1.0, false, false, tracks.length, 0
+      1.0, false, false, tracks.length, null, null
     )
+    this.addTrack(t)
+    this.setState({videoPicker: false})
+  }
+
+  addTrack = (track) => {
+    if(track.order==0) {
+      this.state.referenceTrackId = track.id
+    }
+    var tracks = this.state.tracks
+    t.app = this
     tracks.push(t)
-    this.setState({videoPicker: false, tracks: tracks})
+    this.setState({tracks: tracks})
   }
 
   selectVideo = async () => {
@@ -369,11 +370,11 @@ class App extends Component {
             console.log("ADDING NEW TRACK FROM RECORDING " + this.phToAssetsUri(uri))
             var tracks = this.state.tracks
             var t = new Track(
+              uuidv4(),
               {uri: this.phToAssetsUri(uri)},
-              1.0, false, false, tracks.length, this.state.videoLag
+              1.0, false, false, tracks.length, this.state.referenceTrackId, this.state.referenceTimeOffset
             )
-            tracks.push(t)
-            this.setState({videoPicker: false, tracks: tracks})
+            this.addTrack(t)
           }).catch((err) => {
             console.warn("Failed to store recorded video: " + err.message);
           });
@@ -409,10 +410,6 @@ class App extends Component {
 
   stopVideo = (e) => {
     console.log(new Date().getTime() + " stopVideo")
-    // this.player1.seek(0)
-    // if(this.player2) {
-    //   this.player2.seek(0)
-    // }
     this.state.state = 'idle'
     this.setState({paused: true})
   }
@@ -428,15 +425,7 @@ class App extends Component {
 
 
 
-
-  onAudioInterrupted = (e) => {
-    console.log(new Date().getTime() + ' onAudioInterrupted')
-  }
-
-  onAudioConnected = (e) => {
-    console.log(new Date().getTime() + ' onAudioConnected')
-  }
-
+  //CAMERA RECORD EVENT HANDLERS
   onRecordingStart = (e) => {
     this.state.state = 'recording'
     console.log(new Date().getTime() + ' onRecordingStart')
@@ -450,6 +439,14 @@ class App extends Component {
     this.state.state = 'idle'
   }
 
+  onAudioInterrupted = (e) => {
+    console.log(new Date().getTime() + ' onAudioInterrupted')
+  }
+
+  onAudioConnected = (e) => {
+    console.log(new Date().getTime() + ' onAudioConnected')
+  }
+
   onCameraReady = (e) => {
     console.log(new Date().getTime() + ' onCameraReady')
   }
@@ -458,58 +455,28 @@ class App extends Component {
     console.log(new Date().getTime() + ' onMountError')
   }
 
-
-
-  onBuffer = (e) => {
-    console.log(new Date().getTime() + ' onBuffer')
-  }
-  onVideoError = (e) => {
-    console.log(new Date().getTime() + ' onVideoError')
-  }
-  onLoad = (e) => {
-    console.log(new Date().getTime() + ' onLoad')
-  }
-  onLoadStart = (e) => {
-    console.log(new Date().getTime() + ' onLoadStart')
-  }
-  onSeek = (e) => {
-    console.log(new Date().getTime() + ' onSeek ')
-    console.log(e)
-  }
-  onProgress = (e) => {
-    console.log(new Date().getTime() + ' onProgress')
-    var playerElapsed = e.currentTime * 1000
-
-    if(this.state.state=='recording') {
-      //this info has very low time skew too
-      var recorderElapsed = (new Date().getTime() - this.state.recordingStartTime)
-
-      //this skew was added experimentally for better sounding on my iPhone
-      //must be evaluated on various devices
-      var customLagSkew = 5
-      var lag = recorderElapsed - playerElapsed - customLagSkew
-      console.log("lag=" + lag)
-
-      //use min value because it will probably represent the sample with 
-      //less latency from notification queue
-      if(lag > 100 && lag < this.state.videoLag) {
-        this.state.videoLag = lag
-      }
-
-      console.log("recordingStartTime: " + this.state.recordingStartTime)
-      console.log("videoStartTime:     " + (this.state.recordingStartTime + this.state.videoLag))
-      console.log("player lag: " + (this.state.videoLag) + "ms")
-      // }
-    }
-  }
-  onReadyForDisplay = (e) => {
-    console.log(new Date().getTime() + ' onReadyForDisplay')
-  }
+  // onBuffer = (e) => {
+  //   console.log(new Date().getTime() + ' onBuffer')
+  // }
+  // onLoad = (e) => {
+  //   console.log(new Date().getTime() + ' onLoad')
+  // }
+  // onLoadStart = (e) => {
+  //   console.log(new Date().getTime() + ' onLoadStart')
+  // }
+  // onSeek = (e) => {
+  //   console.log(new Date().getTime() + ' onSeek ')
+  //   console.log(e)
+  // }
+  // onReadyForDisplay = (e) => {
+  //   console.log(new Date().getTime() + ' onReadyForDisplay')
+  // }
 
 };
 
 class Track {
-  constructor(source, volume, audioMute, videoMute, order, toffset) {
+  constructor(id, source, volume, audioMute, videoMute, order, referenceTrackId, referenceTimeOffset) {
+    this.id = id
     this.source = source
     this.volume = volume
     this.audioMute = audioMute
@@ -517,9 +484,50 @@ class Track {
     this.order = order
     this.toffset = toffset
     this.player = null
+    this.app = null
+    this.referenceTrackId = referenceTrackId
+    this.referenceTimeOffset = referenceTimeOffset
   }
+
+  onError = (err) => {
+    console.log(new Date().getTime() + ' onError - track='+ this.id +'; err= ' + err)
+  }
+  onProgress = (e) => {
+    console.log(new Date().getTime() + ' onProgress - track=' + this.id + ' reference')
+
+    //only process on progress for reference track. ignore all others
+    if(this.app.referenceTrackId != this.id) {
+      return
+    }
+    var playerElapsed = e.currentTime * 1000
+
+    if(this.app.state.state=='recording') {
+      //this info has very low time skew too
+      var recorderElapsed = (new Date().getTime() - this.app.state.recordingStartTime)
+
+      //this skew was added experimentally for better sounding on my iPhone
+      //must be evaluated on various devices
+      var customLagSkew = 0
+      var lag = recorderElapsed - playerElapsed - customLagSkew
+      console.log('reference track='+ this.id +'; lag=' + lag)
+
+      //use min value because it will probably represent the sample with 
+      //less latency from notification queue
+      if(lag > 100 && lag < this.app.state.referenceVideoRecordLag) {
+        this.app.state.referenceVideoRecordLag = lag
+      }
+
+      console.log("recordingStartTime: " + this.app.state.recordingStartTime)
+      console.log("videoStartTime:     " + (this.app.state.recordingStartTime + this.app.state.referenceVideoRecordLag))
+      console.log("player lag: " + (this.app.state.referenceVideoRecordLag) + "ms")
+      // }
+    }
+  }
+
 }
 
+
+//STYLES
 const { height } = Dimensions.get("window");
 const styles = StyleSheet.create({
 
