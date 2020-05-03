@@ -159,7 +159,7 @@ export default class CameraView extends Component {
                             contentInsetAdjustmentBehavior="automatic" style={{ flex: 1 }}>
                             <View style={{ flexDirection: 'row', justifyContent: "space-around", flexWrap: 'wrap', flex: 1 }}>
 
-                                {this.viewModel.tracks.map((t) => (
+                                {this.viewModel.sortedTracks().map((t) => (
                                     <TouchableOpacity style={{ padding: 5 }}
                                         onPress={() => { this.viewModel.showTrackDialog(t) }}>
                                         <Video source={t.track.source}

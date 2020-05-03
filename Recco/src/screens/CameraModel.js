@@ -120,6 +120,11 @@ export default class CameraModel extends RhelenaPresentationModel {
     startVideo = (e) => {
         console.log(new Date().getTime() + " startVideo")
 
+        console.log("Traversing time reference graph to define real playback offsets")
+
+        Utils.calculatePlaybackOffsets(this.tracks)
+
+        console.log("Prepare playback offsets")
         for (var i = 0; i < this.tracks.length; i++) {
             var t = this.tracks[i]
             t.preparePlay()
@@ -175,7 +180,7 @@ export default class CameraModel extends RhelenaPresentationModel {
     sortedTracks = () => {
         console.log("SORTED TRACKS")
         return this.tracks.sort((a, b) => {
-            return a.order < b.order
+            return a.track.order < b.track.order
         })
     }
 

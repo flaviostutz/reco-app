@@ -61,6 +61,10 @@ npx react-native run-ios --device "Flavios iPhone"
 
 * After adding a new react native lib, close any emulators or delete the App from the device, close web server and then run everything again. The bundle will be redownloaded from scratch.
 
+* Track removal will perform some fancy time offset reference change recalculations. Be carefull there.
+
+* Be careful about too many React Native renderings so that it won't affect the quality of time measurements
+
 ### Tests
 
 * This is an overlay of two videos showing sync between playback and record. The larger numbers is from a Internet video which shows a framecounter. This video was played on Recco while it recorded the video below, taken with a mirror on front of the camera (it is a scissor actually ;). The measurements of actual recording and playback lags of the real device were done automatically.
