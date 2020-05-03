@@ -38,16 +38,18 @@ export default class CameraView extends Component {
         return (
             <>
                 {this.viewModel.showVideoPicker &&
-                    <View style={{ flex: 1 }}>
-                        <View style={{ height: 100 }}>
+                    <View style={{ flex: 1, flexDirection: 'column' }}>
+                        <View style={{ height: 70, flexDirection: 'row' }}>
                             <Icon
                                 name={'chevron-left'}
                                 type='entypo'
                                 color='black'
-                                size={74}
-                                style={{ padding: 8 }}
-                                onPress={() => { this.viewModel.videoPicker = false }} />
-                            <Text>Select a video</Text>
+                                size={54}
+                                style={{ padding: 8, width: 80 }}
+                                onPress={() => { this.viewModel.showVideoPicker = false }} />
+                            <View style={{ flex: 1, justifyContent: 'center', padding: 20 }}>
+                                <Text style={{ textAlign: 'right', fontSize: 20, fontWeight: 'bold' }}>Select a video</Text>
+                            </View>
                         </View>
                         <CameraRollSelector callback={this.viewModel.onVideoSelected}
                             assetType="Videos"
@@ -99,16 +101,34 @@ export default class CameraView extends Component {
                             }
                             notAuthorizedView={
                                 <View>
-                                    Recco was not authorized to access the camera
-                    </View>
+                                    <Text>Recco was not authorized to access the camera</Text>
+                                </View>
                             }
-                        >
-                        </RNCamera>
+                        />
 
 
                         {/* HEADER */}
-                        <View style={styles.header}>
-                            <Text style={styles.title}>Recco</Text>
+                        <View style={{}}>
+                            <View style={{ height: 70, flexDirection: 'row', justifyContent: 'space-between', alignItems:'flex-end' }}>
+                                <View style={{ flex: 1, justifyContent: 'center', padding: 10 }}>
+                                    <Text style={{fontSize: 24, fontWeight: 'bold', color: 'darkred'}}>Recco</Text>
+                                </View>
+                                <Icon
+                                    name={'ios-reverse-camera'}
+                                    type='ionicon'
+                                    color='black'
+                                    size={34}
+                                    style={{ padding: 6, width: 60 }}
+                                    onPress={this.viewModel.toggleCamera} />
+                                <Icon
+                                    name={'ios-menu'}
+                                    type='ionicon'
+                                    color='black'
+                                    size={34}
+                                    style={{ padding: 6, width: 60 }}
+                                    onPress={{}} />
+                            </View>
+
                         </View>
 
 
@@ -129,7 +149,9 @@ export default class CameraView extends Component {
                                                     }}
                                                     style={{ flex: 1 }}
                                                     paused={this.viewModel.paused}
+                                                    muted={t.track.audioMute}
                                                     onProgress={t.onProgress}
+                                                    onEnd={t.onEnd}
                                                     onError={t.onError}
                                                     // onLoad={this.onLoad}
                                                     // onLoadStart={this.onLoadStart}
@@ -155,25 +177,25 @@ export default class CameraView extends Component {
                             {/* CAMERA ROLL CONTROL */}
                             <View style={styles.controlArea}>
                                 {this.viewModel.showAddCameraRollControl() &&
-                                    <TouchableOpacity onPress={() => { this.viewModel.addTrackFromCameraRoll() }} 
-                                                      style={{flex: 0.75}}>
+                                    <TouchableOpacity onPress={() => { this.viewModel.addTrackFromCameraRoll() }}
+                                        style={{ flex: 0.75 }}>
                                         <Video source={this.viewModel.cameraRollImage}
-                                            paused={true} style={{flex:1}}
+                                            paused={true} style={{ flex: 1 }}
                                         />
                                     </TouchableOpacity>
                                 }
                                 {/* TIME COUNTER */}
                                 {!this.viewModel.showAddCameraRollControl() &&
-                                <View style={{flex:1, justifyContent: 'center'}}>
-                                    <Text style={{ textAlign: 'center', color: this.viewModel.timeColor(), fontSize: 20, fontWeight: 'bold' }}>01:23</Text>
-                                </View>
+                                    <View style={{ flex: 1, justifyContent: 'center' }}>
+                                        <Text style={{ textAlign: 'center', color: this.viewModel.timeColor(), fontSize: 20, fontWeight: 'bold' }}>01:23</Text>
+                                    </View>
                                 }
                             </View>
 
                             {/* RECORD CONTROL */}
                             <View style={styles.controlArea}>
                                 {this.viewModel.showRecordControl() &&
-                                    <TouchableOpacity onPress={() => { this.viewModel.toggleRecording() }} style={{ borderWidth: 4 }}>
+                                    <TouchableOpacity onPress={() => { this.viewModel.toggleRecording() }}>
                                         <Icon
                                             name={this.viewModel.recordIcon()}
                                             type='entypo'
@@ -211,19 +233,6 @@ export default class CameraView extends Component {
 const { height } = Dimensions.get("window");
 const styles = StyleSheet.create({
 
-    header: {
-        padding: 4,
-        height: 60,
-        borderWidth: 2
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: 'darkred',
-        height: 200,
-        top: 18
-    },
-
     backgroundVideo: {
         height: height,
         position: "absolute",
@@ -246,13 +255,13 @@ const styles = StyleSheet.create({
     footer: {
         padding: 0,
         height: 110,
-        borderWidth: 2,
+        // borderWidth: 2,
         flexDirection: 'row',
         justifyContent: 'space-between'
     },
     controlArea: {
-        flex:1,
-        borderWidth: 4,
+        flex: 1,
+        // borderWidth: 4,
         justifyContent: 'center'
     },
 

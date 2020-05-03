@@ -22,7 +22,7 @@ export default class CameraModel extends RhelenaPresentationModel {
         this.state = 'idle'
 
         //used to avoid infinited re-rendering
-        this.camera = {camera:null}
+        this.camera = { camera: null }
 
         this.selectedTrack = null
 
@@ -34,31 +34,40 @@ export default class CameraModel extends RhelenaPresentationModel {
             orientation: 'portrait',
             mirrorVideo: false,
             path: '/test/test.mp4'
-        },
+        }
 
         this.lastRecording = null
 
         this.recordingStartTime = null
-        this.referenceVideoRecordLag = null
+        this.referenceTimeOffset = null
         this.referenceTrackId = null
 
         this.showVideoPicker = false
 
         this.tracks = []
         this.cameraRollImage = null
-        
+        this.saveToCameraRoll = false
+
         this.loadCameraRollPreview()
+
+        //FOR TESTING
+        var t = new Track(
+            uuidv4(),
+            require('../resources/test-30fps-360p.mp4'),
+            1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
+        )
+        this.addTrack(t)
     }
 
     loadCameraRollPreview = () => {
-        if(this.cameraRollImage==null) {
+        if (this.cameraRollImage == null) {
             var options = {
                 first: 1,
                 assetType: "Videos"
             }
             CameraRoll.getPhotos(options).then((photos) => {
-                if(photos.edges.length>0) {
-                    this.cameraRollImage = {uri: Utils.phToAssetsUri(photos.edges[0].node.image.uri)}
+                if (photos.edges.length > 0) {
+                    this.cameraRollImage = { uri: Utils.phToAssetsUri(photos.edges[0].node.image.uri) }
                 } else {
                     this.cameraRollImage = require('../resources/test-30fps-360p.mp4')
                 }
@@ -69,19 +78,19 @@ export default class CameraModel extends RhelenaPresentationModel {
     }
 
 
+
     //VIDEO PLAYBACK
     startVideo = (e) => {
         console.log(new Date().getTime() + " startVideo")
 
-        this.tracks.forEach(t => {
-            if(t.referenceTimeOffset!=null) {
-                t.player.seek(t.referenceTimeOffset / 1000.0, 0)
-            }
-        })
+        for (var i = 0; i < this.tracks.length; i++) {
+            var t = this.tracks[i]
+            t.preparePlay()
+        }
 
-        setTimeout(() => {
+        setTimeout(()=>{
             this.paused = false
-        }, 500);
+        }, 500); 
     }
 
     stopVideo = (e) => {
@@ -97,6 +106,24 @@ export default class CameraModel extends RhelenaPresentationModel {
             this.state = 'playing'
             this.startVideo()
         }
+    }
+
+    onVideoEnd = (videoModel) => {
+        if (this.state == 'playing') {
+            var anyStillPlaying = false
+            for (var i = 0; i < this.tracks.length; i++) {
+                var t = this.tracks[i]
+                if (t.playing) {
+                    anyStillPlaying = true
+                }
+            }
+            if (!anyStillPlaying) {
+                this.stopVideo()
+            }
+        }
+
+        //force update
+        this.tracks = this.tracks
     }
 
 
@@ -115,10 +142,10 @@ export default class CameraModel extends RhelenaPresentationModel {
     }
 
     addTrack = (track) => {
-        console.log(this.tracks)
         var trackModel = new TrackModel(track, this)
         if (track.order == 0) {
             this.referenceTrackId = track.id
+            console.log("REFERENCE TRACKID=" + track.id)
         }
         this.tracks.push(trackModel)
     }
@@ -141,7 +168,7 @@ export default class CameraModel extends RhelenaPresentationModel {
 
 
 
-    
+
     //CAMERA
     toggleRecording = async () => {
         if (this.state == 'idle') {
@@ -167,24 +194,20 @@ export default class CameraModel extends RhelenaPresentationModel {
 
             this.camera.camera.recordAsync(options).then((result) => {
                 console.log(new Date().getTime() + " finished recording")
-                this.stopVideo()
 
                 this.lastRecording = result
 
-                CameraRoll.saveToCameraRoll(result.uri, "video").then((uri) => {
-                    console.log("Video saved to camera roll successfuly");
-                    console.log("ADDING NEW TRACK FROM RECORDING " + Utils.phToAssetsUri(uri))
-                    var t = new Track(
-                        uuidv4(),
-                        { uri: Utils.phToAssetsUri(uri) },
-                        1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
-                    )
-                    this.addTrack(t)
-                    this.stopVideo()
+                if (this.saveToCameraRoll) {
+                    CameraRoll.saveToCameraRoll(result.uri, "video").then((uri) => {
+                        console.log("Video saved to camera roll successfuly");
+                        this.createAndAddTrack(Utils.phToAssetsUri(uri))
 
-                }).catch((err) => {
-                    console.warn("Failed to store recorded video: " + err.message);
-                });
+                    }).catch((err) => {
+                        console.warn("Failed to store recorded video: " + err.message);
+                    });
+                } else {
+                    this.createAndAddTrack(result.uri)
+                }
 
             }).catch((err) => {
                 console.warn("Video recording error. err=" + err);
@@ -192,10 +215,29 @@ export default class CameraModel extends RhelenaPresentationModel {
         }
     }
 
+    createAndAddTrack = (uri) => {
+        console.log("ADDING NEW TRACK FROM RECORDING " + Utils.phToAssetsUri(uri))
+        var t = new Track(
+            uuidv4(),
+            { uri: uri },
+            1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
+        )
+        this.addTrack(t)
+        this.stopVideo()
+    }
+
     stopRecording = () => {
         console.log("STOP RECORDING")
         if (this.state == 'recording') {
             this.camera.camera.stopRecording();
+        }
+    }
+
+    toggleCamera = () => {
+        if (this.type == RNCamera.Constants.Type.front) {
+            this.type = RNCamera.Constants.Type.back
+        } else {
+            this.type = RNCamera.Constants.Type.front
         }
     }
 
@@ -209,12 +251,11 @@ export default class CameraModel extends RhelenaPresentationModel {
         }
         return {}
     }
-    
+
     onRecordingStart = (e) => {
         this.state = 'recording'
         console.log(new Date().getTime() + ' onRecordingStart')
         this.recordingStartTime = new Date().getTime()
-        this.videoLag = Number.MAX_VALUE
         this.startVideo()
     }
 
@@ -263,15 +304,15 @@ export default class CameraModel extends RhelenaPresentationModel {
     }
 
     showPlayControl = () => {
-        return this.tracks.length>0 && this.state!='recording'
+        return this.tracks.length > 0 && this.state != 'recording'
     }
 
     showRecordControl = () => {
-        return this.state!='playing'
+        return this.state != 'playing'
     }
 
     showAddCameraRollControl = () => {
-        return this.state=='idle' && this.cameraRollImage!=null
+        return this.state == 'idle' && this.cameraRollImage != null
     }
 
 }
@@ -282,52 +323,76 @@ class TrackModel {
         this.track = track
         this.cameraModel = cameraModel
         this.player = null
+        this.playing = false
     }
-  
+
+    preparePlay = () => {
+        if (!this.videoMute || !this.audioMute) {
+            this.playing = true
+            if (this.track.referenceTimeOffset != null) {
+                console.log('Seeking offset ' + this.track.referenceTimeOffset + '; track='+ this.track.id +'; reftrack=' + this.track.referenceTrackId)
+                this.player.seek(this.track.referenceTimeOffset / 1000.0, 0)
+            } else {
+                console.log('No offset for track ' + this.track.id)
+                this.player.seek(0, 0)
+            }
+        }
+    }
+
     onError = (err) => {
-      console.log(new Date().getTime() + ' onError - track='+ this.id +'; err= ' + err)
+        console.log(new Date().getTime() + ' onError - track=' + this.track.id + '; err= ' + err)
+        this.playing = false
+    }
+
+    onEnd = () => {
+        console.log(new Date().getTime() + ' onEnd - track=' + this.track.id)
+        this.playing = false
+        this.cameraModel.onVideoEnd(this)
     }
 
     onProgress = (e) => {
-      console.log(new Date().getTime() + ' onProgress - track=' + this + ' reference; cameraModel=' + this.cameraModel)
-  
-      //only process on progress for reference track. ignore all others
-      if(this.cameraModel.referenceTrackId != this.track.id) {
-        return
-      }
-      var playerElapsed = e.currentTime * 1000
-  
-      if(this.cameraModel.state=='recording') {
-        //this info has very low time skew too
-        var recorderElapsed = (new Date().getTime() - this.cameraModel.recordingStartTime)
-  
-        //this skew was added experimentally for better sounding on my iPhone
-        //must be evaluated on various devices
-        var customLagSkew = 0
-        var lag = recorderElapsed - playerElapsed - customLagSkew
-        console.log('reference track='+ this.track.id +'; lag=' + lag)
-  
-        //use min value because it will probably represent the sample with 
-        //less latency from notification queue
-        if(lag > 100 && lag < this.cameraModel.referenceVideoRecordLag) {
-          this.cameraModel.referenceVideoRecordLag = lag
+        console.log(new Date().getTime() + ' onProgress track=' + this.track.id + '; time=' + e.currentTime * 1000)
+
+        //only process on progress for reference track. ignore all others
+        if (this.cameraModel.referenceTrackId == null || this.cameraModel.referenceTrackId != this.track.id) {
+            return
         }
-  
-        console.log("recordingStartTime: " + this.cameraModel.recordingStartTime)
-        console.log("videoStartTime:     " + (this.cameraModel.recordingStartTime + this.cameraModel.referenceVideoRecordLag))
-        console.log("player lag: " + (this.cameraModel.referenceVideoRecordLag) + "ms")
-        // }
-      }
+
+        if (this.cameraModel.state == 'recording') {
+            var playerElapsed = e.currentTime * 1000
+
+            //this info has very low time skew too
+            var recorderElapsed = (new Date().getTime() - this.cameraModel.recordingStartTime)
+
+            //this skew was added experimentally for better sounding on my iPhone
+            //must be evaluated on various devices
+            var customOffset = 0
+            var toffset = recorderElapsed - playerElapsed - customOffset
+            console.log('reference track=' + this.track.id + '; toffset=' + toffset)
+
+            //use min value because it will probably represent the sample with 
+            //less latency from notification queue
+            if (toffset > 100 && (toffset < this.cameraModel.referenceTimeOffset || this.cameraModel.referenceTimeOffset == null)) {
+                this.cameraModel.referenceTimeOffset = toffset
+            }
+
+            console.log("recordingStartTime: " + this.cameraModel.recordingStartTime)
+            console.log("videoStartTime:     " + (this.cameraModel.recordingStartTime + this.cameraModel.referenceTimeOffset))
+            console.log("player toffset: " + (this.cameraModel.referenceTimeOffset) + "ms")
+            // }
+        }
     }
 
     borderVideo = () => {
         if (this.track.audioMute && this.track.videoMute) {
             return { borderWidth: 4 }
         }
-        if (this.cameraModel.state == 'idle') {
-            return { borderWidth: 4 }
-        }
         if (this.cameraModel.state == 'recording' || this.cameraModel.state == 'playing') {
+            console.log("BORDER VIDEO")
+            console.log(this.playing)
+            if (!this.playing) {
+                return { borderWidth: 7 }
+            }
             return {
                 borderColor: "#00FF00",
                 borderRadius: 6,
@@ -341,8 +406,7 @@ class TrackModel {
                 borderWidth: 2,
             }
         }
-        return { borderWidth: 4 }
+        return {}
     }
 
-  }
-  
+}
