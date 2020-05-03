@@ -51,12 +51,48 @@ export default class CameraModel extends RhelenaPresentationModel {
         this.loadCameraRollPreview()
 
         //FOR TESTING
-        var t = new Track(
-            uuidv4(),
-            require('../resources/test-30fps-360p.mp4'),
-            1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
-        )
-        this.addTrack(t)
+        // var t = new Track(
+        //     uuidv4(),
+        //     require('../resources/test-30fps-360p.mp4'),
+        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
+        // )
+        // this.addTrack(t)
+        // var t = new Track(
+        //     uuidv4(),
+        //     require('../resources/test-30fps-360p.mp4'),
+        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
+        // )
+        // this.addTrack(t)
+        // var t = new Track(
+        //     uuidv4(),
+        //     require('../resources/test-30fps-360p.mp4'),
+        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
+        // )
+        // this.addTrack(t)
+        // var t = new Track(
+        //     uuidv4(),
+        //     require('../resources/test-30fps-360p.mp4'),
+        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
+        // )
+        // this.addTrack(t)
+        // var t = new Track(
+        //     uuidv4(),
+        //     require('../resources/test-30fps-360p.mp4'),
+        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
+        // )
+        // this.addTrack(t)
+        // var t = new Track(
+        //     uuidv4(),
+        //     require('../resources/test-30fps-360p.mp4'),
+        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
+        // )
+        // this.addTrack(t)
+        // var t = new Track(
+        //     uuidv4(),
+        //     require('../resources/test-30fps-360p.mp4'),
+        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
+        // )
+        // this.addTrack(t)
     }
 
     loadCameraRollPreview = () => {
@@ -166,6 +202,17 @@ export default class CameraModel extends RhelenaPresentationModel {
         this.showVideoPicker = false
     }
 
+    removeSelectedTrack = () => {
+        var newTracks = []
+        for (var i = 0; i < this.tracks.length; i++) {
+            var t = this.tracks[i]
+            if(this.selectedTrack.track.id!=t.track.id) {
+                newTracks.push(t)
+            }
+        }
+        this.tracks = newTracks
+        this.selectedTrack = null
+    }
 
 
 
@@ -245,7 +292,7 @@ export default class CameraModel extends RhelenaPresentationModel {
         if (this.state == 'recording') {
             return {
                 borderColor: "#FF0000",
-                borderRadius: 6,
+                borderRadius: 4,
                 borderWidth: 4,
             }
         }
@@ -384,14 +431,31 @@ class TrackModel {
     }
 
     borderVideo = () => {
+        if(this.cameraModel.selectedTrack!=null) {
+            console.log(this.cameraModel.selectedTrack.track.id)
+            console.log(this.track.id)
+            if(this.cameraModel.selectedTrack.track.id==this.track.id) {
+                return {
+                    borderColor: "gray",
+                    borderRadius: 6,
+                    borderWidth: 6,
+                }
+            }
+        }
         if (this.track.audioMute && this.track.videoMute) {
-            return { borderWidth: 4 }
+            return {
+                borderWidth: 6,
+                borderRadius: 6,
+                borderColor: '#444444'
+            }
         }
         if (this.cameraModel.state == 'recording' || this.cameraModel.state == 'playing') {
-            console.log("BORDER VIDEO")
-            console.log(this.playing)
             if (!this.playing) {
-                return { borderWidth: 7 }
+                return { 
+                    borderWidth: 6,
+                    borderRadius: 6,
+                    borderColor: '#444444',
+                }
             }
             return {
                 borderColor: "#00FF00",
@@ -407,6 +471,14 @@ class TrackModel {
             }
         }
         return {}
+    }
+
+    videoStyle = () => {
+        if(this.track.order==0) {
+            return {width: 320, height:320, ...this.borderVideo()}
+        } else {
+            return {width: 160, height:160, ...this.borderVideo()}
+        }
     }
 
 }

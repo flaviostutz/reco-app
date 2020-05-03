@@ -16,11 +16,10 @@ import {
 import { attachModelToView } from 'rhelena';
 
 import CameraRollSelector from "react-native-camera-roll-selector";
-import { Icon } from 'react-native-elements'
+import { Icon, Overlay, Button } from 'react-native-elements'
 import { Spinner } from 'native-base';
 import { RNCamera } from 'react-native-camera';
 import Video from 'react-native-video';
-import CameraRoll from "@react-native-community/cameraroll";
 
 import CameraModel from './CameraModel'
 
@@ -37,6 +36,8 @@ export default class CameraView extends Component {
 
         return (
             <>
+
+                {/* CAMERA ROLL PICKER */}
                 {this.viewModel.showVideoPicker &&
                     <View style={{ flex: 1, flexDirection: 'column' }}>
                         <View style={{ height: 70, flexDirection: 'row' }}>
@@ -57,6 +58,21 @@ export default class CameraView extends Component {
                     </View>
                 }
 
+                <Overlay isVisible={this.viewModel.selectedTrack != null} onBackdropPress={() => this.viewModel.selectedTrack = null}>
+                    <Button
+                        icon={
+                            <Icon
+                                name={'trash'}
+                                type='font-awesome'
+                                color='white'
+                                size={24}
+                                style={{padding:5}}
+                            />
+                        }
+                        onPress={this.viewModel.removeSelectedTrack}
+                        title={'Remove'}
+                    />
+                </Overlay>
 
                 {/* CAMERA */}
                 {!this.viewModel.showVideoPicker &&
@@ -109,24 +125,28 @@ export default class CameraView extends Component {
 
                         {/* HEADER */}
                         <View style={{}}>
-                            <View style={{ height: 70, flexDirection: 'row', justifyContent: 'space-between', alignItems:'flex-end' }}>
+                            <View style={{ height: 70, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                                 <View style={{ flex: 1, justifyContent: 'center', padding: 10 }}>
-                                    <Text style={{fontSize: 24, fontWeight: 'bold', color: 'darkred'}}>Recco</Text>
+                                    <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'darkred' }}>Recco</Text>
                                 </View>
-                                <Icon
-                                    name={'ios-reverse-camera'}
-                                    type='ionicon'
-                                    color='black'
-                                    size={34}
-                                    style={{ padding: 6, width: 60 }}
-                                    onPress={this.viewModel.toggleCamera} />
-                                <Icon
-                                    name={'ios-menu'}
-                                    type='ionicon'
-                                    color='black'
-                                    size={34}
-                                    style={{ padding: 6, width: 60 }}
-                                    onPress={{}} />
+                                {this.viewModel.state == 'idle' &&
+                                    <Icon
+                                        name={'ios-reverse-camera'}
+                                        type='ionicon'
+                                        color='black'
+                                        size={34}
+                                        style={{ padding: 6, width: 60 }}
+                                        onPress={this.viewModel.toggleCamera} />
+                                }
+                                {this.viewModel.state == 'idle' &&
+                                    <Icon
+                                        name={'ios-menu'}
+                                        type='ionicon'
+                                        color='black'
+                                        size={34}
+                                        style={{ padding: 6, width: 60 }}
+                                        onPress={{}} />
+                                }
                             </View>
 
                         </View>
@@ -134,36 +154,30 @@ export default class CameraView extends Component {
 
                         {/* TRACKS LIST */}
                         <ScrollView
-                            contentInsetAdjustmentBehavior="automatic"
-                            style={styles.scrollView}>
-                            <View>
-                                <View style={styles.scrollRegion}>
+                            contentInsetAdjustmentBehavior="automatic" style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: "space-around", flexWrap: 'wrap', flex: 1 }}>
 
-                                    {this.viewModel.tracks.map((t) => (
-                                        <View>
-                                            <TouchableOpacity onPress={() => { this.viewModel.showTrackDialog(t) }}
-                                                style={[styles.overlayVideo, t.borderVideo()]}>
-                                                <Video source={t.track.source}
-                                                    ref={(ref) => {
-                                                        t.player = ref
-                                                    }}
-                                                    style={{ flex: 1 }}
-                                                    paused={this.viewModel.paused}
-                                                    muted={t.track.audioMute}
-                                                    onProgress={t.onProgress}
-                                                    onEnd={t.onEnd}
-                                                    onError={t.onError}
-                                                    // onLoad={this.onLoad}
-                                                    // onLoadStart={this.onLoadStart}
-                                                    // onBuffer={this.onBuffer}
-                                                    // onSeek={this.onSeek}
-                                                    // onReadyForDisplay={this.onReadyForDisplay}
-                                                    volume={t.track.volume} />
-                                            </TouchableOpacity>
-                                        </View>
-                                    ))}
-
-                                </View>
+                                {this.viewModel.tracks.map((t) => (
+                                    <TouchableOpacity style={{ padding: 5 }}
+                                        onPress={() => { this.viewModel.showTrackDialog(t) }}>
+                                        <Video source={t.track.source}
+                                            ref={(ref) => {
+                                                t.player = ref
+                                            }}
+                                            style={t.videoStyle()}
+                                            paused={this.viewModel.paused}
+                                            muted={t.track.audioMute}
+                                            onProgress={t.onProgress}
+                                            onEnd={t.onEnd}
+                                            onError={t.onError}
+                                            // onLoad={this.onLoad}
+                                            // onLoadStart={this.onLoadStart}
+                                            // onBuffer={this.onBuffer}
+                                            // onSeek={this.onSeek}
+                                            // onReadyForDisplay={this.onReadyForDisplay}
+                                            volume={t.track.volume} />
+                                    </TouchableOpacity>
+                                ))}
 
                             </View>
                         </ScrollView>
@@ -242,12 +256,7 @@ const styles = StyleSheet.create({
         right: 0,
         zIndex: -99
     },
-    scrollRegion: {
-        justifyContent: "space-between"
-    },
     overlayVideo: {
-        width: 200,
-        height: 200,
         zIndex: 10,
         margin: 10,
     },
@@ -255,13 +264,11 @@ const styles = StyleSheet.create({
     footer: {
         padding: 0,
         height: 110,
-        // borderWidth: 2,
         flexDirection: 'row',
         justifyContent: 'space-between'
     },
     controlArea: {
         flex: 1,
-        // borderWidth: 4,
         justifyContent: 'center'
     },
 
