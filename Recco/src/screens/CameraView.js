@@ -11,6 +11,7 @@ import {
     Text,
     TouchableOpacity,
     Dimensions,
+    Alert,
 } from 'react-native';
 
 import { attachModelToView } from 'rhelena';
@@ -58,6 +59,7 @@ export default class CameraView extends Component {
                     </View>
                 }
 
+                {/* TRACK PROPERTIES POPUP */}
                 <Overlay isVisible={this.viewModel.selectedTrack != null} onBackdropPress={() => this.viewModel.selectedTrack = null}>
                     <Button
                         icon={

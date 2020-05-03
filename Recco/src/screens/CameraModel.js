@@ -7,6 +7,7 @@ import Utils from '../domain/Utils'
 
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import { Alert } from 'react-native';
 
 export default class CameraModel extends RhelenaPresentationModel {
 
@@ -124,9 +125,9 @@ export default class CameraModel extends RhelenaPresentationModel {
             t.preparePlay()
         }
 
-        setTimeout(()=>{
+        setTimeout(() => {
             this.paused = false
-        }, 500); 
+        }, 500);
     }
 
     stopVideo = (e) => {
@@ -172,6 +173,7 @@ export default class CameraModel extends RhelenaPresentationModel {
     }
 
     sortedTracks = () => {
+        console.log("SORTED TRACKS")
         return this.tracks.sort((a, b) => {
             return a.order < b.order
         })
@@ -203,16 +205,95 @@ export default class CameraModel extends RhelenaPresentationModel {
     }
 
     removeSelectedTrack = () => {
+        // if (this.selectedTrack.track.order == 0) {
+        //     this.confirmTrackDeleteAlert()
+        // }
+
+        console.log("Removing Track")
         var newTracks = []
-        for (var i = 0; i < this.tracks.length; i++) {
-            var t = this.tracks[i]
-            if(this.selectedTrack.track.id!=t.track.id) {
+        var sortedTracks = this.sortedTracks()
+        for (var i = 0; i < sortedTracks.length; i++) {
+            var t = sortedTracks[i]
+            console.log("TRACK " + t.track.order + " - " + t.track.id + " - " + t.track.referenceTimeOffset)
+            if (this.selectedTrack.track.id != t.track.id) {
+                //adjust track order
+                if(t.track.order > this.selectedTrack.track.order) {
+                    t.track.order--
+                    console.log("Track order of " + t.track.id + " now is " + t.track.order)
+                }
                 newTracks.push(t)
             }
         }
-        this.tracks = newTracks
+
+        console.log("Adjusting time references if deleted track was a reference to any other tracks")
+        var dependantTracks = []
+        for (var i = 0; i < newTracks.length; i++) {
+            var t = newTracks[i]
+            if(t.track.referenceTrackId==this.selectedTrack.track.id) {
+                dependantTracks.push(t)
+            }
+        }
+
+        if(dependantTracks.length>0) {
+
+            console.log("Sort dependant tracks by offset distance")
+            var sortedDependantTracks = dependantTracks.sort((a, b) => {
+                return a.referenceTimeOffset < b.referenceTimeOffset
+            })
+    
+            var newRefTrack = sortedDependantTracks[0]
+            console.log("New ref track if " + newRefTrack.track.id)
+            for (var i = 0; i < sortedDependantTracks.length; i++) {
+                var dt = sortedDependantTracks[i]
+                if(dt.track.id != newRefTrack.track.id) {
+                    var a = dt.track.referenceTimeOffset
+                    var b = newRefTrack.track.referenceTimeOffset
+                    dt.track.referenceTimeOffset =  (a - b)
+                    dt.track.referenceTrackId = newRefTrack.track.id
+                    console.log("Track id " + dt.track.id + " toffset now is " + dt.track.referenceTimeOffset)
+                }
+            }
+    
+        } else {
+            console.log("No dependant tracks found")
+        }
+
+        console.log("Final tracks")
+        console.log(newTracks.map((t)=>t.track.order + ';' + t.track.id + ';' + t.track.referenceTimeOffset + ';' + t.track.referenceTrackId))
+
+        var nt =  newTracks.sort((a, b) => {
+            return a.order < b.order
+        })
+
+        this.tracks = nt
         this.selectedTrack = null
     }
+
+    getTrackModelById = (trackId) => {
+        for (var i = 0; i < this.tracks.length; i++) {
+            var t = this.tracks[i]
+            if (t.track.id == trackId) {
+                return t
+            }
+        }
+        return null
+    }
+
+    // confirmTrackDeleteAlert = () =>
+    //     Alert.alert(
+    //         "Reference track",
+    //         "If you delete this track, the time sync reference of other tracks may be lost. Confirm deletion?",
+    //         [
+    //             {
+    //                 text: "Cancel",
+    //                 onPress: () => console.log("Cancel Pressed"),
+    //                 style: "cancel"
+    //             },
+    //             { text: "Delete", onPress: () => console.log("Delete Pressed") }
+    //         ],
+    //         { cancelable: false }
+    //     );
+
 
 
 
@@ -377,7 +458,7 @@ class TrackModel {
         if (!this.videoMute || !this.audioMute) {
             this.playing = true
             if (this.track.referenceTimeOffset != null) {
-                console.log('Seeking offset ' + this.track.referenceTimeOffset + '; track='+ this.track.id +'; reftrack=' + this.track.referenceTrackId)
+                console.log('Seeking offset ' + this.track.referenceTimeOffset + '; track=' + this.track.id + '; reftrack=' + this.track.referenceTrackId)
                 this.player.seek(this.track.referenceTimeOffset / 1000.0, 0)
             } else {
                 console.log('No offset for track ' + this.track.id)
@@ -431,10 +512,10 @@ class TrackModel {
     }
 
     borderVideo = () => {
-        if(this.cameraModel.selectedTrack!=null) {
+        if (this.cameraModel.selectedTrack != null) {
             console.log(this.cameraModel.selectedTrack.track.id)
             console.log(this.track.id)
-            if(this.cameraModel.selectedTrack.track.id==this.track.id) {
+            if (this.cameraModel.selectedTrack.track.id == this.track.id) {
                 return {
                     borderColor: "gray",
                     borderRadius: 6,
@@ -451,7 +532,7 @@ class TrackModel {
         }
         if (this.cameraModel.state == 'recording' || this.cameraModel.state == 'playing') {
             if (!this.playing) {
-                return { 
+                return {
                     borderWidth: 6,
                     borderRadius: 6,
                     borderColor: '#444444',
@@ -474,10 +555,10 @@ class TrackModel {
     }
 
     videoStyle = () => {
-        if(this.track.order==0) {
-            return {width: 320, height:320, ...this.borderVideo()}
+        if (this.track.order == 0) {
+            return { width: 320, height: 320, ...this.borderVideo() }
         } else {
-            return {width: 160, height:160, ...this.borderVideo()}
+            return { width: 160, height: 160, ...this.borderVideo() }
         }
     }
 
