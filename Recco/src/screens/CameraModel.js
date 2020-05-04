@@ -25,25 +25,14 @@ export default class CameraModel extends RhelenaPresentationModel {
         //used to avoid infinited re-rendering
         this.camera = { camera: null }
 
+        this.showVideoPicker = false
         this.selectedTrack = null
-
-
-        this.recordOptions = {
-            maxDuration: 5,
-            quality: RNCamera.Constants.VideoQuality['720p'],
-            codec: RNCamera.Constants.VideoCodec['H264'],
-            orientation: 'portrait',
-            mirrorVideo: false,
-            path: '/test/test.mp4'
-        }
 
         this.lastRecording = null
 
-        this.recordingStartTime = null
-        this.referenceTimeOffset = null
         this.referenceTrackId = null
-
-        this.showVideoPicker = false
+        this.referenceTimeOffset = null
+        this.recordingStartTime = null
 
         this.tracks = []
         this.cameraRollImage = null
@@ -58,6 +47,7 @@ export default class CameraModel extends RhelenaPresentationModel {
         //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
         // )
         // this.addTrack(t)
+        // this.selectedTrack = this.tracks[0]
         // var t = new Track(
         //     uuidv4(),
         //     require('../resources/test-30fps-360p.mp4'),
@@ -120,8 +110,6 @@ export default class CameraModel extends RhelenaPresentationModel {
     startVideo = (e) => {
         console.log(new Date().getTime() + " startVideo")
 
-        console.log("Traversing time reference graph to define real playback offsets")
-
         Utils.calculatePlaybackOffsets(this.tracks)
 
         console.log("Prepare playback offsets")
@@ -173,23 +161,19 @@ export default class CameraModel extends RhelenaPresentationModel {
 
     //TRACKS
     showTrackDialog(track) {
-        console.log("TRACK DIALOG ")
+        // console.log("TRACK DIALOG ")
         this.selectedTrack = track
     }
 
     sortedTracks = () => {
-        console.log("SORTED TRACKS")
+        // console.log("SORTED TRACKS")
         return this.tracks.sort((a, b) => {
-            return a.track.order < b.track.order
+            return a.track.order - b.track.order
         })
     }
 
     addTrack = (track) => {
         var trackModel = new TrackModel(track, this)
-        if (track.order == 0) {
-            this.referenceTrackId = track.id
-            console.log("REFERENCE TRACKID=" + track.id)
-        }
         this.tracks.push(trackModel)
     }
 
@@ -219,7 +203,7 @@ export default class CameraModel extends RhelenaPresentationModel {
         var sortedTracks = this.sortedTracks()
         for (var i = 0; i < sortedTracks.length; i++) {
             var t = sortedTracks[i]
-            console.log("TRACK " + t.track.order + " - " + t.track.id + " - " + t.track.referenceTimeOffset)
+            console.log("TRACK " + t.track.order + " - " + t.track.id + " - " + t.track.referenceTrackId + " - " + t.track.referenceTimeOffset)
             if (this.selectedTrack.track.id != t.track.id) {
                 //adjust track order
                 if(t.track.order > this.selectedTrack.track.order) {
@@ -240,24 +224,27 @@ export default class CameraModel extends RhelenaPresentationModel {
         }
 
         if(dependantTracks.length>0) {
-
             console.log("Sort dependant tracks by offset distance")
             var sortedDependantTracks = dependantTracks.sort((a, b) => {
-                return a.referenceTimeOffset < b.referenceTimeOffset
+                return b.referenceTimeOffset - a.referenceTimeOffset
             })
     
             var newRefTrack = sortedDependantTracks[0]
             console.log("New ref track if " + newRefTrack.track.id)
+            console.log("Dependant tracks")
             for (var i = 0; i < sortedDependantTracks.length; i++) {
                 var dt = sortedDependantTracks[i]
+                console.log(dt.track.id + ' offset=' + dt.track.referenceTimeOffset)
                 if(dt.track.id != newRefTrack.track.id) {
                     var a = dt.track.referenceTimeOffset
                     var b = newRefTrack.track.referenceTimeOffset
                     dt.track.referenceTimeOffset =  (a - b)
                     dt.track.referenceTrackId = newRefTrack.track.id
-                    console.log("Track id " + dt.track.id + " toffset now is " + dt.track.referenceTimeOffset)
+                    console.log(dt.track.id + " offset now is " + dt.track.referenceTimeOffset)
                 }
             }
+            newRefTrack.track.referenceTrackId = null
+            newRefTrack.track.referenceTimeOffset = null
     
         } else {
             console.log("No dependant tracks found")
@@ -272,16 +259,6 @@ export default class CameraModel extends RhelenaPresentationModel {
 
         this.tracks = nt
         this.selectedTrack = null
-    }
-
-    getTrackModelById = (trackId) => {
-        for (var i = 0; i < this.tracks.length; i++) {
-            var t = this.tracks[i]
-            if (t.track.id == trackId) {
-                return t
-            }
-        }
-        return null
     }
 
     // confirmTrackDeleteAlert = () =>
@@ -314,13 +291,26 @@ export default class CameraModel extends RhelenaPresentationModel {
     startRecording = async () => {
         if (this.state == 'idle') {
             this.state = 'preparing'
+
             this.lastRecording = null
+            this.referenceTimeOffset = null
+
+            for (var i = 0; i < this.tracks.length; i++) {
+                var t = this.tracks[i]
+                if(t.track.referenceTrackId==null) {
+                    this.referenceTrackId = t.track.id
+                    break
+                }
+            }
+    
             console.log("START RECORDING")
+            console.log('Reference track = ' + this.referenceTrackId)
 
             const options = {
-                quality: '480p',
-                maxDuration: 300,
-                maxFileSize: 200 * 1024 * 1024
+                quality: RNCamera.Constants.VideoQuality['480p'],
+                codec: RNCamera.Constants.VideoCodec['H264'],
+                maxDuration: 600,
+                maxFileSize: 400 * 1024 * 1024,
             };
 
             console.log(new Date().getTime() + ' starting recording')
@@ -359,6 +349,22 @@ export default class CameraModel extends RhelenaPresentationModel {
         this.stopVideo()
     }
 
+    moveSelectedTrack = (qtty) => {
+        var sortedTracks = this.sortedTracks()
+        // this.selectedTrack.track.order += qtty
+        var so = this.selectedTrack.track.order
+        if(qtty==1) {
+            sortedTracks[so].track.order++
+            sortedTracks[so+1].track.order--
+        } if(qtty==-1) {
+            sortedTracks[so-1].track.order++
+            sortedTracks[so].track.order--
+        } else {
+            console.warn('unsupported value')
+        }
+        this.tracks = this.sortedTracks()//force update
+    }
+
     stopRecording = () => {
         console.log("STOP RECORDING")
         if (this.state == 'recording') {
@@ -379,10 +385,11 @@ export default class CameraModel extends RhelenaPresentationModel {
             return {
                 borderColor: "#FF0000",
                 borderRadius: 4,
-                borderWidth: 4,
+                borderWidth: 2,
             }
         }
-        return {}
+        return {
+        }
     }
 
     onRecordingStart = (e) => {
@@ -457,14 +464,15 @@ class TrackModel {
         this.cameraModel = cameraModel
         this.player = null
         this.playing = false
+        this.rootOffset = null
     }
 
     preparePlay = () => {
         if (!this.videoMute || !this.audioMute) {
             this.playing = true
-            if (this.track.referenceTimeOffset != null) {
-                console.log('Seeking offset ' + this.track.referenceTimeOffset + '; track=' + this.track.id + '; reftrack=' + this.track.referenceTrackId)
-                this.player.seek(this.track.referenceTimeOffset / 1000.0, 0)
+            if (this.rootOffset != null) {
+                console.log('Seeking offset ' + this.rootOffset + '; track=' + this.track.id)
+                this.player.seek(this.rootOffset / 1000.0, 0)
             } else {
                 console.log('No offset for track ' + this.track.id)
                 this.player.seek(0, 0)
@@ -478,13 +486,13 @@ class TrackModel {
     }
 
     onEnd = () => {
-        console.log(new Date().getTime() + ' onEnd - track=' + this.track.id)
+        // console.log(new Date().getTime() + ' onEnd - track=' + this.track.id)
         this.playing = false
         this.cameraModel.onVideoEnd(this)
     }
 
     onProgress = (e) => {
-        console.log(new Date().getTime() + ' onProgress track=' + this.track.id + '; time=' + e.currentTime * 1000)
+        // console.log(new Date().getTime() + ' onProgress track=' + this.track.id + '; time=' + e.currentTime * 1000)
 
         //only process on progress for reference track. ignore all others
         if (this.cameraModel.referenceTrackId == null || this.cameraModel.referenceTrackId != this.track.id) {
@@ -501,7 +509,7 @@ class TrackModel {
             //must be evaluated on various devices
             var customOffset = 0
             var toffset = recorderElapsed - playerElapsed - customOffset
-            console.log('reference track=' + this.track.id + '; toffset=' + toffset)
+            // console.log('reference track=' + this.track.id + '; toffset=' + toffset)
 
             //use min value because it will probably represent the sample with 
             //less latency from notification queue
@@ -509,37 +517,35 @@ class TrackModel {
                 this.cameraModel.referenceTimeOffset = toffset
             }
 
-            console.log("recordingStartTime: " + this.cameraModel.recordingStartTime)
-            console.log("videoStartTime:     " + (this.cameraModel.recordingStartTime + this.cameraModel.referenceTimeOffset))
-            console.log("player toffset: " + (this.cameraModel.referenceTimeOffset) + "ms")
+            // console.log("recordingStartTime: " + this.cameraModel.recordingStartTime)
+            // console.log("videoStartTime:     " + (this.cameraModel.recordingStartTime + this.cameraModel.referenceTimeOffset))
+            // console.log("player toffset: " + (this.cameraModel.referenceTimeOffset) + "ms")
             // }
         }
     }
 
     borderVideo = () => {
         if (this.cameraModel.selectedTrack != null) {
-            console.log(this.cameraModel.selectedTrack.track.id)
-            console.log(this.track.id)
             if (this.cameraModel.selectedTrack.track.id == this.track.id) {
                 return {
                     borderColor: "gray",
                     borderRadius: 6,
-                    borderWidth: 6,
+                    borderWidth: 2,
                 }
             }
         }
-        if (this.track.audioMute && this.track.videoMute) {
-            return {
-                borderWidth: 6,
-                borderRadius: 6,
-                borderColor: '#444444'
-            }
-        }
+        // if (this.track.audioMute && this.track.videoMute) {
+        //     return {
+        //         borderWidth: 6,
+        //         borderRadius: 6,
+        //         borderColor: '#444444'
+        //     }
+        // }
         if (this.cameraModel.state == 'recording' || this.cameraModel.state == 'playing') {
             if (!this.playing) {
                 return {
                     borderWidth: 6,
-                    borderRadius: 6,
+                    borderRadius: 2,
                     borderColor: '#444444',
                 }
             }
@@ -556,15 +562,20 @@ class TrackModel {
                 borderWidth: 2,
             }
         }
-        return {}
+        return {
+            borderColor: "rgba(0,0,0,0)",
+            borderRadius: 6,
+            borderWidth: 2,
+        }
     }
 
     videoStyle = () => {
         if (this.track.order == 0) {
-            return { width: 320, height: 320, ...this.borderVideo() }
+            return { width: 320, height: 320 }
         } else {
-            return { width: 160, height: 160, ...this.borderVideo() }
+            return { width: 160, height: 160 }
         }
     }
 
 }
+

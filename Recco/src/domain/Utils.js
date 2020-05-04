@@ -8,22 +8,33 @@ export default class Utils {
 
     static calculatePlaybackOffsets(tracksModel) {
         console.log("calculatePlaybackOffsets")
+        for (var i = 0; i < tracksModel.length; i++) {
+            var t = tracksModel[i]
+            t.rootOffset = Utils.calcOffsetToRoot(tracksModel, t)
+            console.log('Track id ' + t.track.id + ' offset=' + t.rootOffset)
+        }
+    }
 
-        console.log("Look for root node")
-        var rootTrack = null
-        for (var i = 0; i < this.tracks.length; i++) {
-            var t = this.tracks[i]
-            if(t.track.referenceTrackId!=null) {
-                var rt = this.getTrackModelById(t.track.referenceTrackId)
-                if(rt==null) {
-                    console.warn("Track id " + t.track.id + " has a time reference to inexistent track " + t.track.referenceTrackId)
-                }
-            } else {
-                if(rootTrack!=null) {
-                    console.warn("Found duplicate root tracks (tracks without time reference). Ignoring last.")
-                }
+    static calcOffsetToRoot(tracksModel, fromTrack) {
+        if(fromTrack.track.referenceTrackId==null) {
+            return 0
+        }
+        var referenceTrack = Utils.getTrackModelById(tracksModel, fromTrack.track.referenceTrackId)
+        if(referenceTrack==null) {
+            console.log("REFERENCE TRACK ID " + fromTrack.track.referenceTrackId + " NOT FOUND AMONG TRACKS. ABORTING")
+            return null
+        }
+        return fromTrack.track.referenceTimeOffset + Utils.calcOffsetToRoot(tracksModel, referenceTrack)
+    }
+
+    static getTrackModelById(tracksModel, trackId) {
+        for (var i = 0; i < tracksModel.length; i++) {
+            var t = tracksModel[i]
+            if (t.track.id == trackId) {
+                return t
             }
         }
+        return null
     }
 
 }

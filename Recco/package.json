@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@react-native-community/cameraroll": "^1.5.2",
+    "@react-native-community/slider": "^2.0.9",
     "manuh": "^1.4.3",
     "native-base": "^2.13.12",
     "react": "16.11.0",
