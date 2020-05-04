@@ -94,6 +94,35 @@ export default class CameraView extends Component {
                                     disabled={this.viewModel.state != 'idle' || this.viewModel.selectedTrack.track.order == 0}
                                 />
                             </View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+                                <Button
+                                    icon={
+                                        <Icon
+                                            name={'backward'}
+                                            type='font-awesome'
+                                            color='white'
+                                            size={24}
+                                            style={{ padding: 10 }}
+                                        />
+                                    }
+                                    onPress={() => {this.viewModel.selectedTrack.track.referenceTimeOffset=this.viewModel.selectedTrack.track.referenceTimeOffset-1; this.forceUpdate()}}
+                                    disabled={this.viewModel.state != 'idle' || this.viewModel.selectedTrack.track.referenceTimeOffset==null}
+                                />
+                                <Text style={{color:'white', fontSize:18}}>{Math.round(this.viewModel.selectedTrack.track.referenceTimeOffset)}ms</Text>
+                                <Button
+                                    icon={
+                                        <Icon
+                                            name={'forward'}
+                                            type='font-awesome'
+                                            color='white'
+                                            size={24}
+                                            style={{ padding: 10 }}
+                                        />
+                                    }
+                                    onPress={() => {this.viewModel.selectedTrack.track.referenceTimeOffset=this.viewModel.selectedTrack.track.referenceTimeOffset+1;this.forceUpdate()}}
+                                    disabled={this.viewModel.state != 'idle' || this.viewModel.selectedTrack.track.referenceTimeOffset==null}
+                                />
+                            </View>
                             <View style={{ marginTop: 20 }}>
                                 <Text style={{ fontWeight: 'bold', textAlign: 'center', color: 'white' }}>Volume</Text>
                                 <Slider
@@ -267,7 +296,7 @@ export default class CameraView extends Component {
                                                 </View>
                                             </View>
                                         }
-                                        
+
                                         <Video source={t.track.source}
                                             ref={(ref) => {
                                                 t.player = ref

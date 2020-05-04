@@ -544,8 +544,8 @@ class TrackModel {
         if (this.cameraModel.state == 'recording' || this.cameraModel.state == 'playing') {
             if (!this.playing) {
                 return {
-                    borderWidth: 6,
-                    borderRadius: 2,
+                    borderRadius: 6,
+                    borderWidth: 4,
                     borderColor: '#444444',
                 }
             }
