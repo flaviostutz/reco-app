@@ -36,10 +36,12 @@ export default class CameraModel extends RhelenaPresentationModel {
         this.referenceTimeOffset = null
         this.recordingStartTime = null
         this.lastElapsedTime = null
+        this.recordLed = true
 
         this.tracks = []
         this.cameraRollImage = null
         this.saveToCameraRoll = false
+
 
         this.loadCameraRollPreview()
 
@@ -422,10 +424,11 @@ export default class CameraModel extends RhelenaPresentationModel {
                 var elapsed = new Date().getTime() - this.recordingStartTime
                 if((elapsed - this.lastElapsedTime) >= 1000) {
                     this.lastElapsedTime = elapsed
+                    this.recordLed = !this.recordLed
                 }
                         
                 if(this.state=='recording') {
-                    setTimeout(updateTime, 1000);    
+                    setTimeout(updateTime, 1000);
                 }
             }
             updateTime()
@@ -532,7 +535,8 @@ class TrackModel {
             console.log(this.cameraModel.lastElapsedTime)
             console.log(playerElapsed)
             if(!this.cameraModel.lastElapsedTime || (playerElapsed - this.cameraModel.lastElapsedTime) > 900) {
-                this.cameraModel.lastElapsedTime = playerElapsed
+                //do this so that only one render will take place
+                this.cameraModel = {...this.cameraModel, ...{lastElapsedTime: playerElapsed, recordLed: !this.cameraModel.recordLed}}
             }
         }
 

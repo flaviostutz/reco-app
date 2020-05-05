@@ -94,11 +94,3 @@ target 'Recco' do
   end
 end
 
-target 'Recco-tvOS' do
-  # Pods for Recco-tvOS
-
-  target 'Recco-tvOSTests' do
-    inherit! :search_paths
-    # Pods for testing
-  end
-end

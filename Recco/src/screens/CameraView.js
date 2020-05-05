@@ -11,6 +11,8 @@ import {
     Text,
     TouchableOpacity,
     Dimensions,
+    SafeAreaView,
+    Image
 } from 'react-native';
 
 import Slider from '@react-native-community/slider'
@@ -43,13 +45,12 @@ export default class CameraView extends Component {
 
         console.log('RENDER()')
 
-        if(this.viewModel==null) {
-            return <View style={{backgroundColor:'black', flex:1}}></View>
+        if (this.viewModel == null) {
+            return <View style={{ backgroundColor: 'black', flex: 1 }}></View>
         }
 
         return (
             <>
-
                 {/* CAMERA ROLL PICKER */}
                 {this.viewModel.showVideoPicker &&
                     <View style={{ flex: 1, flexDirection: 'column' }}>
@@ -132,10 +133,10 @@ export default class CameraView extends Component {
                                             style={{ padding: 10 }}
                                         />
                                     }
-                                    onPress={() => {this.viewModel.selectedTrack.track.referenceTimeOffset=this.viewModel.selectedTrack.track.referenceTimeOffset-1; this.forceUpdate()}}
-                                    disabled={this.viewModel.state != 'idle' || this.viewModel.selectedTrack.track.referenceTimeOffset==null}
+                                    onPress={() => { this.viewModel.selectedTrack.track.referenceTimeOffset = this.viewModel.selectedTrack.track.referenceTimeOffset - 1; this.forceUpdate() }}
+                                    disabled={this.viewModel.state != 'idle' || this.viewModel.selectedTrack.track.referenceTimeOffset == null}
                                 />
-                                <Text style={{color:'white', fontSize:18}}>{Math.round(this.viewModel.selectedTrack.track.referenceTimeOffset)}ms</Text>
+                                <Text style={{ color: 'white', fontSize: 18 }}>{Math.round(this.viewModel.selectedTrack.track.referenceTimeOffset)}ms</Text>
                                 <Button
                                     icon={
                                         <Icon
@@ -146,8 +147,8 @@ export default class CameraView extends Component {
                                             style={{ padding: 10 }}
                                         />
                                     }
-                                    onPress={() => {this.viewModel.selectedTrack.track.referenceTimeOffset=this.viewModel.selectedTrack.track.referenceTimeOffset+1;this.forceUpdate()}}
-                                    disabled={this.viewModel.state != 'idle' || this.viewModel.selectedTrack.track.referenceTimeOffset==null}
+                                    onPress={() => { this.viewModel.selectedTrack.track.referenceTimeOffset = this.viewModel.selectedTrack.track.referenceTimeOffset + 1; this.forceUpdate() }}
+                                    disabled={this.viewModel.state != 'idle' || this.viewModel.selectedTrack.track.referenceTimeOffset == null}
                                 />
                             </View>
                             <View style={{ marginTop: 20 }}>
@@ -258,12 +259,20 @@ export default class CameraView extends Component {
                             }
                         />
 
+                        <SafeAreaView style={{ flex: 1 }}>
 
-                        {/* HEADER */}
-                        <View style={{}}>
-                            <View style={{ height: 70, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                                <View style={{ flex: 1, justifyContent: 'center', padding: 10 }}>
-                                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: 'darkred' }}>RECCO</Text>
+                            {/* HEADER */}
+                            <View style={{ paddingLeft: 13, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Image style={{ height: 20, width: 70 }}
+                                        resizeMode='contain'
+                                        source={require('../resources/recco-h-transp1.png')} />
+                                    {(this.viewModel.state!='recording' || this.viewModel.recordLed) &&
+                                        <Image style={{ height: 20, width: 20 }}
+                                            resizeMode='contain'
+                                            source={require('../resources/recco-h-transp2.png')} />
+                                    }
+                                    {/* <Text style={{ fontSize: 20, fontWeight: 'bold', color: 'darkred' }}>RECCO</Text> */}
                                 </View>
                                 {this.viewModel.state == 'idle' &&
                                     <Icon
@@ -271,7 +280,7 @@ export default class CameraView extends Component {
                                         type='ionicon'
                                         color='black'
                                         size={34}
-                                        style={{ padding: 6, width: 60 }}
+                                        style={{ padding: 0, width: 60 }}
                                         onPress={() => this.viewModel.toggleCamera} />
                                 }
                                 {this.viewModel.state == 'idle' &&
@@ -280,127 +289,129 @@ export default class CameraView extends Component {
                                         type='ionicon'
                                         color='black'
                                         size={34}
-                                        style={{ padding: 6, width: 60 }} />
+                                        style={{ padding: 0, width: 60 }} />
                                 }
                             </View>
 
-                        </View>
 
 
-                        {/* TRACKS LIST */}
-                        <ScrollView
-                            contentInsetAdjustmentBehavior="automatic" style={{ flex: 1 }}>
-                            <View style={{ flexDirection: 'row', justifyContent: "space-around", flexWrap: 'wrap', flex: 1 }}>
+                            {/* TRACKS LIST */}
+                            <ScrollView
+                                contentInsetAdjustmentBehavior="automatic" style={{ flex: 1 }}>
+                                <View style={{ flexDirection: 'row', justifyContent: "space-around", flexWrap: 'wrap', flex: 1 }}>
 
-                                {this.viewModel.sortedTracks().map((t) => (
-                                    <TouchableOpacity style={{ padding: 0, ...t.borderVideo() }}
-                                        onPress={() => { this.viewModel.showTrackDialog(t) }}
-                                        activeOpacity={0.6}>
+                                    {this.viewModel.sortedTracks().map((t) => (
+                                        <TouchableOpacity style={{ padding: 0, ...t.borderVideo() }}
+                                            onPress={() => { this.viewModel.showTrackDialog(t) }}
+                                            activeOpacity={0.6}>
 
-                                        <View>
-                                            {(t.track.audioMute) &&
-                                                <View style={{ position: 'absolute', width: '100%', height: '100%', zIndex: 99, padding: 20 }}>
-                                                    <View style={{ backgroundColor: 'rgba(0,0,0,1)' }}>
-                                                        <Icon
-                                                            name={'volume-variant-off'}
-                                                            type='material-community'
-                                                            color='gray'
-                                                            size={24}
-                                                            style={{ padding: 5 }}
-                                                        />
+                                            <View>
+                                                {(t.track.audioMute) &&
+                                                    <View style={{ position: 'absolute', width: '100%', height: '100%', zIndex: 99, padding: 20 }}>
+                                                        <View style={{ backgroundColor: 'rgba(0,0,0,1)' }}>
+                                                            <Icon
+                                                                name={'volume-variant-off'}
+                                                                type='material-community'
+                                                                color='gray'
+                                                                size={24}
+                                                                style={{ padding: 5 }}
+                                                            />
+                                                        </View>
                                                     </View>
-                                                </View>
-                                            }
-                                            {(t.track.videoMute) &&
-                                                <View style={{ position: 'absolute', width: '100%', height: '100%', zIndex: 88, padding: 20, alignItems: 'center', justifyContent: 'center', backgroundColor:'gray' }}>
-                                                    <View style={{ backgroundColor: 'rgba(0,0,0,1)' }}>
-                                                        <Icon
-                                                            name={'videocam-off'}
-                                                            type='material'
-                                                            color='gray'
-                                                            size={60}
-                                                            style={{ padding: 5 }}
-                                                        />
+                                                }
+                                                {(t.track.videoMute) &&
+                                                    <View style={{ position: 'absolute', width: '100%', height: '100%', zIndex: 88, padding: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'gray' }}>
+                                                        <View style={{ backgroundColor: 'rgba(0,0,0,1)' }}>
+                                                            <Icon
+                                                                name={'videocam-off'}
+                                                                type='material'
+                                                                color='gray'
+                                                                size={60}
+                                                                style={{ padding: 5 }}
+                                                            />
+                                                        </View>
                                                     </View>
-                                                </View>
-                                            }
+                                                }
+                                            </View>
+
+                                            <Video source={t.track.source}
+                                                ref={(ref) => {
+                                                    t.player = ref
+                                                }}
+                                                style={t.videoStyle()}
+                                                paused={this.viewModel.paused}
+                                                muted={t.track.audioMute}
+                                                onProgress={t.onProgress}
+                                                onEnd={t.onEnd}
+                                                onError={t.onError}
+                                                muted={t.track.audioMute}
+                                                // onLoad={this.onLoad}
+                                                // onLoadStart={this.onLoadStart}
+                                                // onBuffer={this.onBuffer}
+                                                // onSeek={this.onSeek}
+                                                // onReadyForDisplay={this.onReadyForDisplay}
+                                                volume={t.track.volume} />
+                                        </TouchableOpacity>
+                                    ))}
+
+                                </View>
+                            </ScrollView>
+
+
+
+
+                            {/* FOOTER */}
+                            <View style={styles.footer}>
+
+                                {/* CAMERA ROLL CONTROL */}
+                                <View style={styles.controlArea}>
+                                    {this.viewModel.showAddCameraRollControl() &&
+                                        <TouchableOpacity onPress={() => { this.viewModel.addTrackFromCameraRoll() }}
+                                            style={{ flex: 0.75 }}>
+                                            <Video source={this.viewModel.cameraRollImage}
+                                                paused={true} style={{ flex: 1 }}
+                                            />
+                                        </TouchableOpacity>
+                                    }
+                                    {/* TIME COUNTER */}
+                                    {!this.viewModel.showAddCameraRollControl() &&
+                                        <View style={{ flex: 1, justifyContent: 'center' }}>
+                                            <Text style={{ textAlign: 'center', color: this.viewModel.timeColor(), fontSize: 20, fontWeight: 'bold' }}>{Utils.msToTime(this.viewModel.lastElapsedTime)}</Text>
                                         </View>
+                                    }
+                                </View>
 
-                                        <Video source={t.track.source}
-                                            ref={(ref) => {
-                                                t.player = ref
-                                            }}
-                                            style={t.videoStyle()}
-                                            paused={this.viewModel.paused}
-                                            muted={t.track.audioMute}
-                                            onProgress={t.onProgress}
-                                            onEnd={t.onEnd}
-                                            onError={t.onError}
-                                            muted={t.track.audioMute}
-                                            // onLoad={this.onLoad}
-                                            // onLoadStart={this.onLoadStart}
-                                            // onBuffer={this.onBuffer}
-                                            // onSeek={this.onSeek}
-                                            // onReadyForDisplay={this.onReadyForDisplay}
-                                            volume={t.track.volume} />
-                                    </TouchableOpacity>
-                                ))}
+                                {/* RECORD CONTROL */}
+                                <View style={styles.controlArea}>
+                                    {this.viewModel.showRecordControl() &&
+                                        <TouchableOpacity onPress={() => { this.viewModel.toggleRecording() }}>
+                                            <Icon
+                                                name={this.viewModel.recordIcon()}
+                                                type='entypo'
+                                                color='#ee4400'
+                                                size={74}
+                                                style={{ padding: 8 }} />
+                                        </TouchableOpacity>
+                                    }
+                                </View>
 
-                            </View>
-                        </ScrollView>
-
-
-
-
-                        {/* FOOTER */}
-                        <View style={styles.footer}>
-
-                            {/* CAMERA ROLL CONTROL */}
-                            <View style={styles.controlArea}>
-                                {this.viewModel.showAddCameraRollControl() &&
-                                    <TouchableOpacity onPress={() => { this.viewModel.addTrackFromCameraRoll() }}
-                                        style={{ flex: 0.75 }}>
-                                        <Video source={this.viewModel.cameraRollImage}
-                                            paused={true} style={{ flex: 1 }}
-                                        />
-                                    </TouchableOpacity>
-                                }
-                                {/* TIME COUNTER */}
-                                {!this.viewModel.showAddCameraRollControl() &&
-                                    <View style={{ flex: 1, justifyContent: 'center' }}>
-                                        <Text style={{ textAlign: 'center', color: this.viewModel.timeColor(), fontSize: 20, fontWeight: 'bold' }}>{Utils.msToTime(this.viewModel.lastElapsedTime)}</Text>
-                                    </View>
-                                }
+                                {/* PLAY CONTROL */}
+                                <View style={styles.controlArea}>
+                                    {this.viewModel.showPlayControl() &&
+                                        <TouchableOpacity onPress={() => { this.viewModel.togglePlaying() }} style={styles.controlArea}>
+                                            <Icon
+                                                name={this.viewModel.playIcon()}
+                                                type='entypo'
+                                                color='#ee4400'
+                                                size={58}
+                                                style={{ padding: 8 }} />
+                                        </TouchableOpacity>
+                                    }
+                                </View>
                             </View>
 
-                            {/* RECORD CONTROL */}
-                            <View style={styles.controlArea}>
-                                {this.viewModel.showRecordControl() &&
-                                    <TouchableOpacity onPress={() => { this.viewModel.toggleRecording() }}>
-                                        <Icon
-                                            name={this.viewModel.recordIcon()}
-                                            type='entypo'
-                                            color='#ee4400'
-                                            size={74}
-                                            style={{ padding: 8 }} />
-                                    </TouchableOpacity>
-                                }
-                            </View>
+                        </SafeAreaView>
 
-                            {/* PLAY CONTROL */}
-                            <View style={styles.controlArea}>
-                                {this.viewModel.showPlayControl() &&
-                                    <TouchableOpacity onPress={() => { this.viewModel.togglePlaying() }} style={styles.controlArea}>
-                                        <Icon
-                                            name={this.viewModel.playIcon()}
-                                            type='entypo'
-                                            color='#ee4400'
-                                            size={58}
-                                            style={{ padding: 8 }} />
-                                    </TouchableOpacity>
-                                }
-                            </View>
-                        </View>
                     </View>
                 }
                 <FlashMessage position="top" />
