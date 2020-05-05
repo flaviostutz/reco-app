@@ -23,6 +23,8 @@ import { Spinner } from 'native-base';
 import { RNCamera } from 'react-native-camera';
 import Video from 'react-native-video';
 
+import Utils from '../domain/Utils'
+
 import CameraModel from './CameraModel'
 
 import FlashMessage from "react-native-flash-message";
@@ -31,10 +33,9 @@ export default class CameraView extends Component {
 
     constructor(props) {
         super(props);
-        attachModelToView(new CameraModel(props), this);
     }
 
-    UNSAFE_componentDidMount = () => {
+    componentDidMount = () => {
         attachModelToView(new CameraModel(this.props), this);
     }
 
@@ -262,7 +263,7 @@ export default class CameraView extends Component {
                         <View style={{}}>
                             <View style={{ height: 70, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                                 <View style={{ flex: 1, justifyContent: 'center', padding: 10 }}>
-                                    <Text style={{ fontSize: 24, fontWeight: 'bold', color: 'darkred' }}>Recco</Text>
+                                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: 'darkred' }}>RECCO</Text>
                                 </View>
                                 {this.viewModel.state == 'idle' &&
                                     <Icon
@@ -367,7 +368,7 @@ export default class CameraView extends Component {
                                 {/* TIME COUNTER */}
                                 {!this.viewModel.showAddCameraRollControl() &&
                                     <View style={{ flex: 1, justifyContent: 'center' }}>
-                                        <Text style={{ textAlign: 'center', color: this.viewModel.timeColor(), fontSize: 20, fontWeight: 'bold' }}>01:23</Text>
+                                        <Text style={{ textAlign: 'center', color: this.viewModel.timeColor(), fontSize: 20, fontWeight: 'bold' }}>{Utils.msToTime(this.viewModel.lastElapsedTime)}</Text>
                                     </View>
                                 }
                             </View>

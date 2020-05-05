@@ -16,11 +16,11 @@ export default class Utils {
     }
 
     static calcOffsetToRoot(tracksModel, fromTrack) {
-        if(fromTrack.track.referenceTrackId==null) {
+        if (fromTrack.track.referenceTrackId == null) {
             return 0
         }
         var referenceTrack = Utils.getTrackModelById(tracksModel, fromTrack.track.referenceTrackId)
-        if(referenceTrack==null) {
+        if (referenceTrack == null) {
             console.log("REFERENCE TRACK ID " + fromTrack.track.referenceTrackId + " NOT FOUND AMONG TRACKS. ABORTING")
             return null
         }
@@ -35,6 +35,16 @@ export default class Utils {
             }
         }
         return null
+    }
+
+    static msToTime(s) {
+        var ms = s % 1000;
+        s = (s - ms) / 1000;
+        var secs = s % 60;
+        s = (s - secs) / 60;
+        var mins = s
+        // return 'AAA'
+        return (mins>9?mins:'0'+mins) + ':' + (secs>9?secs:'0'+secs);
     }
 
 }

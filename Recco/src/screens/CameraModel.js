@@ -35,6 +35,7 @@ export default class CameraModel extends RhelenaPresentationModel {
         this.referenceTrackId = null
         this.referenceTimeOffset = null
         this.recordingStartTime = null
+        this.lastElapsedTime = null
 
         this.tracks = []
         this.cameraRollImage = null
@@ -111,6 +112,7 @@ export default class CameraModel extends RhelenaPresentationModel {
     //VIDEO PLAYBACK
     startVideo = (e) => {
         console.log(new Date().getTime() + " startVideo")
+        this.lastElapsedTime = 0
 
         Utils.calculatePlaybackOffsets(this.tracks)
 
@@ -413,6 +415,21 @@ export default class CameraModel extends RhelenaPresentationModel {
         console.log(new Date().getTime() + ' onRecordingStart')
         this.recordingStartTime = new Date().getTime()
         this.startVideo()
+
+        //for other cases, will be updated onProgress to sync with video play
+        if(this.tracks.length==0) {
+            updateTime = () => {
+                var elapsed = new Date().getTime() - this.recordingStartTime
+                if((elapsed - this.lastElapsedTime) >= 1000) {
+                    this.lastElapsedTime = elapsed
+                }
+                        
+                if(this.state=='recording') {
+                    setTimeout(updateTime, 1000);    
+                }
+            }
+            updateTime()
+        }
     }
 
     onRecordingEnd = (e) => {
@@ -510,13 +527,21 @@ class TrackModel {
     onProgress = (e) => {
         // console.log(new Date().getTime() + ' onProgress track=' + this.track.id + '; time=' + e.currentTime * 1000)
 
+        if(this.track.order==0) {
+            var playerElapsed = e.currentTime * 1000
+            console.log(this.cameraModel.lastElapsedTime)
+            console.log(playerElapsed)
+            if(!this.cameraModel.lastElapsedTime || (playerElapsed - this.cameraModel.lastElapsedTime) > 900) {
+                this.cameraModel.lastElapsedTime = playerElapsed
+            }
+        }
+
         //only process on progress for reference track. ignore all others
         if (this.cameraModel.referenceTrackId == null || this.cameraModel.referenceTrackId != this.track.id) {
             return
         }
 
         if (this.cameraModel.state == 'recording') {
-            var playerElapsed = e.currentTime * 1000
 
             //this info has very low time skew too
             var recorderElapsed = (new Date().getTime() - this.cameraModel.recordingStartTime)
