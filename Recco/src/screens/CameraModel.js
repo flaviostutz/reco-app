@@ -9,6 +9,8 @@ import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { Alert } from 'react-native';
 
+import { showMessage, hideMessage } from "react-native-flash-message";
+
 export default class CameraModel extends RhelenaPresentationModel {
 
     constructor(props) {
@@ -191,6 +193,20 @@ export default class CameraModel extends RhelenaPresentationModel {
         )
         this.addTrack(t)
         this.showVideoPicker = false
+    }
+
+    shareTrack = (track) => {
+        console.log("Saving " + this.selectedTrack.track.source.uri + " to camera roll")
+        CameraRoll.saveToCameraRoll(this.selectedTrack.track.source.uri, "video").then((uri) => {
+            console.log("Video saved to camera roll successfuly");
+            showMessage({
+                message: "Video saved to your library successfully",
+                type: "info",
+              });
+
+        }).catch((err) => {
+            console.warn("Failed to store recorded video: " + err.message);
+        });
     }
 
     removeSelectedTrack = () => {

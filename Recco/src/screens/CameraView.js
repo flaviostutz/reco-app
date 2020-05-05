@@ -25,16 +25,26 @@ import Video from 'react-native-video';
 
 import CameraModel from './CameraModel'
 
+import FlashMessage from "react-native-flash-message";
+
 export default class CameraView extends Component {
 
     constructor(props) {
         super(props);
+        attachModelToView(new CameraModel(props), this);
+    }
+
+    UNSAFE_componentDidMount = () => {
         attachModelToView(new CameraModel(this.props), this);
     }
 
     render() {
 
         console.log('RENDER()')
+
+        if(this.viewModel==null) {
+            return <View style={{backgroundColor:'black', flex:1}}></View>
+        }
 
         return (
             <>
@@ -66,7 +76,23 @@ export default class CameraView extends Component {
                         overlayStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
                     >
                         <View style={{ padding: 5 }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <View>
+                                <Button
+                                    icon={
+                                        <Icon
+                                            name={'share-square'}
+                                            type='font-awesome-5'
+                                            color='white'
+                                            size={20}
+                                            style={{ padding: 5 }}
+                                        />
+                                    }
+                                    containerStyle={{ padding: 0 }}
+                                    disabled={!this.viewModel.selectedTrack.track.source.uri.startsWith("file://")}
+                                    onPress={() => this.viewModel.shareTrack(this.viewModel.selectedTrack)}
+                                />
+                            </View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
                                 <Button
                                     icon={
                                         <Icon
@@ -270,32 +296,34 @@ export default class CameraView extends Component {
                                         onPress={() => { this.viewModel.showTrackDialog(t) }}
                                         activeOpacity={0.6}>
 
-                                        {(t.track.audioMute) &&
-                                            <View style={{ position: 'absolute', width: '100%', height: '100%', zIndex: 99, padding: 20 }}>
-                                                <View style={{ backgroundColor: 'rgba(0,0,0,1)' }}>
-                                                    <Icon
-                                                        name={'volume-variant-off'}
-                                                        type='material-community'
-                                                        color='gray'
-                                                        size={24}
-                                                        style={{ padding: 5 }}
-                                                    />
+                                        <View>
+                                            {(t.track.audioMute) &&
+                                                <View style={{ position: 'absolute', width: '100%', height: '100%', zIndex: 99, padding: 20 }}>
+                                                    <View style={{ backgroundColor: 'rgba(0,0,0,1)' }}>
+                                                        <Icon
+                                                            name={'volume-variant-off'}
+                                                            type='material-community'
+                                                            color='gray'
+                                                            size={24}
+                                                            style={{ padding: 5 }}
+                                                        />
+                                                    </View>
                                                 </View>
-                                            </View>
-                                        }
-                                        {(t.track.videoMute) &&
-                                            <View style={{ position: 'absolute', width: '100%', height: '100%', zIndex: 88, padding: 20, alignItems: 'center', justifyContent: 'center', backgroundColor:'gray' }}>
-                                                <View style={{ backgroundColor: 'rgba(0,0,0,1)' }}>
-                                                    <Icon
-                                                        name={'videocam-off'}
-                                                        type='material'
-                                                        color='gray'
-                                                        size={60}
-                                                        style={{ padding: 5 }}
-                                                    />
+                                            }
+                                            {(t.track.videoMute) &&
+                                                <View style={{ position: 'absolute', width: '100%', height: '100%', zIndex: 88, padding: 20, alignItems: 'center', justifyContent: 'center', backgroundColor:'gray' }}>
+                                                    <View style={{ backgroundColor: 'rgba(0,0,0,1)' }}>
+                                                        <Icon
+                                                            name={'videocam-off'}
+                                                            type='material'
+                                                            color='gray'
+                                                            size={60}
+                                                            style={{ padding: 5 }}
+                                                        />
+                                                    </View>
                                                 </View>
-                                            </View>
-                                        }
+                                            }
+                                        </View>
 
                                         <Video source={t.track.source}
                                             ref={(ref) => {
@@ -374,6 +402,7 @@ export default class CameraView extends Component {
                         </View>
                     </View>
                 }
+                <FlashMessage position="top" />
             </>
         );
     }
