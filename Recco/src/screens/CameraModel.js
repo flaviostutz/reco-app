@@ -32,8 +32,8 @@ export default class CameraModel extends RhelenaPresentationModel {
 
         this.lastRecording = null
 
-        this.referenceTrackId = null
-        this.referenceTimeOffset = null
+        this.recordingReferenceTrackId = null
+        this.recordingReferenceTimeOffset = null
         this.recordingStartTime = null
         this.lastElapsedTime = null
         this.recordLed = true
@@ -41,7 +41,6 @@ export default class CameraModel extends RhelenaPresentationModel {
         this.tracks = []
         this.cameraRollImage = null
         this.saveToCameraRoll = false
-
 
         this.loadCameraRollPreview()
 
@@ -206,7 +205,7 @@ export default class CameraModel extends RhelenaPresentationModel {
             showMessage({
                 message: "Video saved to your library successfully",
                 type: "info",
-              });
+            });
 
         }).catch((err) => {
             console.warn("Failed to store recorded video: " + err.message);
@@ -214,87 +213,90 @@ export default class CameraModel extends RhelenaPresentationModel {
     }
 
     removeSelectedTrack = () => {
-        // if (this.selectedTrack.track.order == 0) {
-        //     this.confirmTrackDeleteAlert()
-        // }
-
-        console.log("Removing Track")
-        var newTracks = []
-        var sortedTracks = this.sortedTracks()
-        for (var i = 0; i < sortedTracks.length; i++) {
-            var t = sortedTracks[i]
-            console.log("TRACK " + t.track.order + " - " + t.track.id + " - " + t.track.referenceTrackId + " - " + t.track.referenceTimeOffset)
-            if (this.selectedTrack.track.id != t.track.id) {
-                //adjust track order
-                if(t.track.order > this.selectedTrack.track.order) {
-                    t.track.order--
-                    console.log("Track order of " + t.track.id + " now is " + t.track.order)
+        this.confirmTrackDeleteAlert(() => {
+            console.log("REMOVING TRACK " + this.selectedTrack.track.id)
+            var newTracks = []
+            var sortedTracks = this.sortedTracks()
+            for (var i = 0; i < sortedTracks.length; i++) {
+                var t = sortedTracks[i]
+                console.log("TRACK " + t.track.order + " - " + t.track.id + " - " + t.track.referenceTrackId + " - " + t.track.referenceTimeOffset)
+                if (this.selectedTrack.track.id != t.track.id) {
+                    //adjust track order
+                    if (t.track.order > this.selectedTrack.track.order) {
+                        t.track.order--
+                        console.log("Track order of " + t.track.id + " now is " + t.track.order)
+                    }
+                    newTracks.push(t)
                 }
-                newTracks.push(t)
             }
-        }
 
-        console.log("Adjusting time references if deleted track was a reference to any other tracks")
-        var dependantTracks = []
-        for (var i = 0; i < newTracks.length; i++) {
-            var t = newTracks[i]
-            if(t.track.referenceTrackId==this.selectedTrack.track.id) {
-                dependantTracks.push(t)
+            console.log("Adjusting time references if deleted track was a reference to any other tracks")
+            var dependantTracks = []
+            for (var i = 0; i < newTracks.length; i++) {
+                var t = newTracks[i]
+                if (t.track.referenceTrackId == this.selectedTrack.track.id) {
+                    dependantTracks.push(t)
+                }
             }
-        }
 
-        if(dependantTracks.length>0) {
-            console.log("Sort dependant tracks by offset distance")
-            var sortedDependantTracks = dependantTracks.sort((a, b) => {
-                return b.referenceTimeOffset - a.referenceTimeOffset
+            if (dependantTracks.length > 0) {
+                console.log("Sort dependant tracks by offset distance")
+                var sortedDependantTracks = dependantTracks.sort((a, b) => {
+                    return b.referenceTimeOffset - a.referenceTimeOffset
+                })
+
+                var newRefTrack = sortedDependantTracks[0]
+                console.log("New ref track if " + newRefTrack.track.id)
+                console.log("Dependant tracks")
+                for (var i = 0; i < sortedDependantTracks.length; i++) {
+                    var dt = sortedDependantTracks[i]
+                    console.log(dt.track.id + ' offset=' + dt.track.referenceTimeOffset)
+                    if (dt.track.id != newRefTrack.track.id) {
+                        var a = dt.track.referenceTimeOffset
+                        var b = newRefTrack.track.referenceTimeOffset
+                        dt.track.referenceTimeOffset = (a - b)
+                        dt.track.referenceTrackId = newRefTrack.track.id
+                        console.log(dt.track.id + " offset now is " + dt.track.referenceTimeOffset)
+                    }
+                }
+                newRefTrack.track.referenceTrackId = null
+                newRefTrack.track.referenceTimeOffset = null
+
+            } else {
+                console.log("No dependant tracks found")
+            }
+
+            console.log("Final tracks")
+            console.log(newTracks.map((t) => t.track.order + ';' + t.track.id + ';' + t.track.referenceTimeOffset + ';' + t.track.referenceTrackId))
+
+            var nt = newTracks.sort((a, b) => {
+                return a.order < b.order
             })
-    
-            var newRefTrack = sortedDependantTracks[0]
-            console.log("New ref track if " + newRefTrack.track.id)
-            console.log("Dependant tracks")
-            for (var i = 0; i < sortedDependantTracks.length; i++) {
-                var dt = sortedDependantTracks[i]
-                console.log(dt.track.id + ' offset=' + dt.track.referenceTimeOffset)
-                if(dt.track.id != newRefTrack.track.id) {
-                    var a = dt.track.referenceTimeOffset
-                    var b = newRefTrack.track.referenceTimeOffset
-                    dt.track.referenceTimeOffset =  (a - b)
-                    dt.track.referenceTrackId = newRefTrack.track.id
-                    console.log(dt.track.id + " offset now is " + dt.track.referenceTimeOffset)
-                }
-            }
-            newRefTrack.track.referenceTrackId = null
-            newRefTrack.track.referenceTimeOffset = null
-    
-        } else {
-            console.log("No dependant tracks found")
-        }
 
-        console.log("Final tracks")
-        console.log(newTracks.map((t)=>t.track.order + ';' + t.track.id + ';' + t.track.referenceTimeOffset + ';' + t.track.referenceTrackId))
+            this.tracks = nt
+            this.selectedTrack = null
 
-        var nt =  newTracks.sort((a, b) => {
-            return a.order < b.order
+            showMessage({
+                message: "Track deleted successfully",
+                type: "info",
+            });
         })
-
-        this.tracks = nt
-        this.selectedTrack = null
     }
 
-    // confirmTrackDeleteAlert = () =>
-    //     Alert.alert(
-    //         "Reference track",
-    //         "If you delete this track, the time sync reference of other tracks may be lost. Confirm deletion?",
-    //         [
-    //             {
-    //                 text: "Cancel",
-    //                 onPress: () => console.log("Cancel Pressed"),
-    //                 style: "cancel"
-    //             },
-    //             { text: "Delete", onPress: () => console.log("Delete Pressed") }
-    //         ],
-    //         { cancelable: false }
-    //     );
+    confirmTrackDeleteAlert = (okAction) =>
+        Alert.alert(
+            "Track delete",
+            "You are about to delete this track. If not saved, all data will be lost. Confirm?",
+            [
+                {
+                    text: "Cancel",
+                    onPress: () => console.log("Cancel Pressed"),
+                    style: "cancel"
+                },
+                { text: "Delete", onPress: () => okAction() }
+            ],
+            { cancelable: false }
+        );
 
 
 
@@ -313,18 +315,21 @@ export default class CameraModel extends RhelenaPresentationModel {
             this.state = 'preparing'
 
             this.lastRecording = null
-            this.referenceTimeOffset = null
+            this.recordingReferenceTimeOffset = null
+            this.recordingReferenceTrackId = null
 
             for (var i = 0; i < this.tracks.length; i++) {
                 var t = this.tracks[i]
-                if(t.track.referenceTrackId==null) {
-                    this.referenceTrackId = t.track.id
+                console.log('t.track.referenceTrackId=' + t.track.referenceTrackId)
+                if (t.track.referenceTrackId == null) {
+                    this.recordingReferenceTrackId = t.track.id
+                    console.log('this.recordingReferenceTrackId=' + this.recordingReferenceTrackId)
                     break
                 }
             }
-    
+
             console.log("START RECORDING")
-            console.log('Reference track = ' + this.referenceTrackId)
+            console.log('Recording reference track = ' + this.recordingReferenceTrackId)
 
             const options = {
                 quality: RNCamera.Constants.VideoQuality['480p'],
@@ -363,7 +368,7 @@ export default class CameraModel extends RhelenaPresentationModel {
         var t = new Track(
             uuidv4(),
             { uri: uri },
-            1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
+            1.0, false, false, this.tracks.length, this.recordingReferenceTrackId, this.recordingReferenceTimeOffset
         )
         this.addTrack(t)
         this.stopVideo()
@@ -373,11 +378,11 @@ export default class CameraModel extends RhelenaPresentationModel {
         var sortedTracks = this.sortedTracks()
         // this.selectedTrack.track.order += qtty
         var so = this.selectedTrack.track.order
-        if(qtty==1) {
+        if (qtty == 1) {
             sortedTracks[so].track.order++
-            sortedTracks[so+1].track.order--
-        } if(qtty==-1) {
-            sortedTracks[so-1].track.order++
+            sortedTracks[so + 1].track.order--
+        } if (qtty == -1) {
+            sortedTracks[so - 1].track.order++
             sortedTracks[so].track.order--
         } else {
             console.warn('unsupported value')
@@ -419,15 +424,15 @@ export default class CameraModel extends RhelenaPresentationModel {
         this.startVideo()
 
         //for other cases, will be updated onProgress to sync with video play
-        if(this.tracks.length==0) {
+        if (this.tracks.length == 0) {
             updateTime = () => {
                 var elapsed = new Date().getTime() - this.recordingStartTime
-                if((elapsed - this.lastElapsedTime) >= 1000) {
+                if ((elapsed - this.lastElapsedTime) >= 1000) {
                     this.lastElapsedTime = elapsed
                     this.recordLed = !this.recordLed
                 }
-                        
-                if(this.state=='recording') {
+
+                if (this.state == 'recording') {
                     setTimeout(updateTime, 1000);
                 }
             }
@@ -530,18 +535,22 @@ class TrackModel {
     onProgress = (e) => {
         // console.log(new Date().getTime() + ' onProgress track=' + this.track.id + '; time=' + e.currentTime * 1000)
 
-        if(this.track.order==0) {
-            var playerElapsed = e.currentTime * 1000
-            console.log(this.cameraModel.lastElapsedTime)
-            console.log(playerElapsed)
-            if(!this.cameraModel.lastElapsedTime || (playerElapsed - this.cameraModel.lastElapsedTime) > 900) {
+        var playerElapsed = e.currentTime * 1000
+
+        if (this.track.order == 0) {
+            // console.log(this.cameraModel.lastElapsedTime)
+            // console.log(playerElapsed)
+            if (!this.cameraModel.lastElapsedTime || (playerElapsed - this.cameraModel.lastElapsedTime) > 900) {
                 //do this so that only one render will take place
-                this.cameraModel = {...this.cameraModel, ...{lastElapsedTime: playerElapsed, recordLed: !this.cameraModel.recordLed}}
+                // this.cameraModel.lastElapsedTime = playerElapsed
+                // this.cameraModel.recordLed = !this.cameraModel.recordLed
             }
         }
 
+        console.log('reftrackid=' + this.cameraModel.recordingReferenceTrackId + '; trackid=' + this.track.id)
+
         //only process on progress for reference track. ignore all others
-        if (this.cameraModel.referenceTrackId == null || this.cameraModel.referenceTrackId != this.track.id) {
+        if (this.cameraModel.recordingReferenceTrackId == null || this.cameraModel.recordingReferenceTrackId != this.track.id) {
             return
         }
 
@@ -554,12 +563,12 @@ class TrackModel {
             //must be evaluated on various devices
             var customOffset = 0
             var toffset = recorderElapsed - playerElapsed - customOffset
-            // console.log('reference track=' + this.track.id + '; toffset=' + toffset)
+            console.log('reference track=' + this.track.id + '; toffset=' + toffset)
 
             //use min value because it will probably represent the sample with 
             //less latency from notification queue
-            if (toffset > 100 && (toffset < this.cameraModel.referenceTimeOffset || this.cameraModel.referenceTimeOffset == null)) {
-                this.cameraModel.referenceTimeOffset = toffset
+            if (toffset > 100 && (toffset < this.cameraModel.recordingReferenceTimeOffset || this.cameraModel.recordingReferenceTimeOffset == null)) {
+                this.cameraModel.recordingReferenceTimeOffset = toffset
             }
 
             // console.log("recordingStartTime: " + this.cameraModel.recordingStartTime)

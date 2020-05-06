@@ -262,8 +262,8 @@ export default class CameraView extends Component {
                         <SafeAreaView style={{ flex: 1 }}>
 
                             {/* HEADER */}
-                            <View style={{ paddingLeft: 13, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={{ paddingTop:4, paddingLeft: 13, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <View style={{ flex:1, height: 38, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' }}>
                                     <Image style={{ height: 20, width: 70 }}
                                         resizeMode='contain'
                                         source={require('../resources/recco-h-transp1.png')} />
@@ -272,7 +272,6 @@ export default class CameraView extends Component {
                                             resizeMode='contain'
                                             source={require('../resources/recco-h-transp2.png')} />
                                     }
-                                    {/* <Text style={{ fontSize: 20, fontWeight: 'bold', color: 'darkred' }}>RECCO</Text> */}
                                 </View>
                                 {this.viewModel.state == 'idle' &&
                                     <Icon
@@ -281,7 +280,7 @@ export default class CameraView extends Component {
                                         color='black'
                                         size={34}
                                         style={{ padding: 0, width: 60 }}
-                                        onPress={() => this.viewModel.toggleCamera} />
+                                        onPress={() => this.viewModel.toggleCamera()} />
                                 }
                                 {this.viewModel.state == 'idle' &&
                                     <Icon
@@ -305,7 +304,7 @@ export default class CameraView extends Component {
                                             onPress={() => { this.viewModel.showTrackDialog(t) }}
                                             activeOpacity={0.6}>
 
-                                            <View>
+                                            <>
                                                 {(t.track.audioMute) &&
                                                     <View style={{ position: 'absolute', width: '100%', height: '100%', zIndex: 99, padding: 20 }}>
                                                         <View style={{ backgroundColor: 'rgba(0,0,0,1)' }}>
@@ -332,7 +331,7 @@ export default class CameraView extends Component {
                                                         </View>
                                                     </View>
                                                 }
-                                            </View>
+                                            </>
 
                                             <Video source={t.track.source}
                                                 ref={(ref) => {
