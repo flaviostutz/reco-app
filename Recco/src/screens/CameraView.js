@@ -24,6 +24,7 @@ import { Icon, Overlay, Button } from 'react-native-elements'
 import { Spinner } from 'native-base';
 import { RNCamera } from 'react-native-camera';
 import Video from 'react-native-video';
+import SplashScreen from 'react-native-splash-screen';
 
 import Utils from '../domain/Utils'
 
@@ -39,6 +40,7 @@ export default class CameraView extends Component {
 
     componentDidMount = () => {
         attachModelToView(new CameraModel(this.props), this);
+        SplashScreen.hide()
     }
 
     render() {
