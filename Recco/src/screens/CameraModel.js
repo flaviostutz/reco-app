@@ -381,7 +381,7 @@ export default class CameraModel extends RhelenaPresentationModel {
         if (qtty == 1) {
             sortedTracks[so].track.order++
             sortedTracks[so + 1].track.order--
-        } if (qtty == -1) {
+        } else if (qtty == -1) {
             sortedTracks[so - 1].track.order++
             sortedTracks[so].track.order--
         } else {
@@ -547,7 +547,7 @@ class TrackModel {
             }
         }
 
-        console.log('reftrackid=' + this.cameraModel.recordingReferenceTrackId + '; trackid=' + this.track.id)
+        // console.log('reftrackid=' + this.cameraModel.recordingReferenceTrackId + '; trackid=' + this.track.id)
 
         //only process on progress for reference track. ignore all others
         if (this.cameraModel.recordingReferenceTrackId == null || this.cameraModel.recordingReferenceTrackId != this.track.id) {
@@ -563,7 +563,7 @@ class TrackModel {
             //must be evaluated on various devices
             var customOffset = 0
             var toffset = recorderElapsed - playerElapsed - customOffset
-            console.log('reference track=' + this.track.id + '; toffset=' + toffset)
+            // console.log('reference track=' + this.track.id + '; toffset=' + toffset)
 
             //use min value because it will probably represent the sample with 
             //less latency from notification queue
