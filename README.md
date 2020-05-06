@@ -56,6 +56,8 @@ npx react-native run-ios --device "Flavios iPhone"
     * Now locate App icon and launch it normally
 
     * It will start connected to your web server for hotdeployment and debuging
+  
+  * For some reason, on the first App run, it closes without notice. Seems like a timeout due to taking too long to download the whole js bundle (before configuring Splash Screen pod on the project this didn't happen). Simply re-run the npx command and it will work.
 
 ### Tips
 
