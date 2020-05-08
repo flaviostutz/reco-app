@@ -35,6 +35,7 @@ export default class CameraModel extends RhelenaPresentationModel {
         this.recordingReferenceTrackId = null
         this.recordingReferenceTimeOffset = null
         this.recordingStartTime = null
+        this.playingStartTime = null
         this.lastElapsedTime = null
         this.recordLed = true
 
@@ -105,6 +106,7 @@ export default class CameraModel extends RhelenaPresentationModel {
         this.lastElapsedTime = 0
 
         Utils.calculatePlaybackOffsets(this.tracks)
+        this.playingStartTime = new Date().getTime()
 
         console.log("Prepare playback offsets")
         for (var i = 0; i < this.tracks.length; i++) {
@@ -121,6 +123,7 @@ export default class CameraModel extends RhelenaPresentationModel {
         console.log(new Date().getTime() + " stopVideo")
         this.state = 'idle'
         this.paused = true
+        this.playingStartTime = null
     }
 
     togglePlaying = async () => {
@@ -129,6 +132,19 @@ export default class CameraModel extends RhelenaPresentationModel {
         } else {
             this.state = 'playing'
             this.startVideo()
+
+            //update elapsed time counter
+            updateTime = () => {
+                if (this.state == 'playing') {
+                    var elapsed = new Date().getTime() - this.playingStartTime
+                    if ((elapsed - this.lastElapsedTime) >= 1000) {
+                        this.lastElapsedTime = elapsed
+                        this.recordLed = !this.recordLed
+                    }
+                    setTimeout(updateTime, 1000);
+                }
+            }
+            updateTime()
         }
     }
 
@@ -438,21 +454,18 @@ export default class CameraModel extends RhelenaPresentationModel {
         this.recordingStartTime = new Date().getTime()
         this.startVideo()
 
-        //for other cases, will be updated onProgress to sync with video play
-        if (this.tracks.length == 0) {
-            updateTime = () => {
+        //update elapsed time counter
+        updateTime = () => {
+            if (this.state == 'recording') {
                 var elapsed = new Date().getTime() - this.recordingStartTime
                 if ((elapsed - this.lastElapsedTime) >= 1000) {
                     this.lastElapsedTime = elapsed
                     this.recordLed = !this.recordLed
                 }
-
-                if (this.state == 'recording') {
-                    setTimeout(updateTime, 1000);
-                }
+                setTimeout(updateTime, 1000);
             }
-            updateTime()
         }
+        updateTime()
     }
 
     onRecordingEnd = (e) => {
@@ -552,15 +565,15 @@ class TrackModel {
 
         var playerElapsed = e.currentTime * 1000
 
-        if (this.track.order == 0) {
+        // if (this.track.order == 0) {
             // console.log(this.cameraModel.lastElapsedTime)
             // console.log(playerElapsed)
-            if (!this.cameraModel.lastElapsedTime || (playerElapsed - this.cameraModel.lastElapsedTime) > 900) {
+            // if (!this.cameraModel.lastElapsedTime || (playerElapsed - this.cameraModel.lastElapsedTime) > 900) {
                 //do this so that only one render will take place
                 // this.cameraModel.lastElapsedTime = playerElapsed
                 // this.cameraModel.recordLed = !this.cameraModel.recordLed
-            }
-        }
+            // }
+        // }
 
         // console.log('reftrackid=' + this.cameraModel.recordingReferenceTrackId + '; trackid=' + this.track.id)
 
