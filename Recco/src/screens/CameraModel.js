@@ -7,7 +7,7 @@ import Utils from '../domain/Utils'
 
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
-import { Alert } from 'react-native';
+import { PermissionsAndroid, Platform, Alert } from 'react-native';
 
 import { showMessage, hideMessage } from "react-native-flash-message";
 
@@ -52,53 +52,42 @@ export default class CameraModel extends RhelenaPresentationModel {
         // )
         // this.addTrack(t)
         // this.selectedTrack = this.tracks[0]
-        // var t = new Track(
-        //     uuidv4(),
-        //     require('../resources/test-30fps-360p.mp4'),
-        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
-        // )
-        // this.addTrack(t)
-        // var t = new Track(
-        //     uuidv4(),
-        //     require('../resources/test-30fps-360p.mp4'),
-        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
-        // )
-        // this.addTrack(t)
-        // var t = new Track(
-        //     uuidv4(),
-        //     require('../resources/test-30fps-360p.mp4'),
-        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
-        // )
-        // this.addTrack(t)
-        // var t = new Track(
-        //     uuidv4(),
-        //     require('../resources/test-30fps-360p.mp4'),
-        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
-        // )
-        // this.addTrack(t)
-        // var t = new Track(
-        //     uuidv4(),
-        //     require('../resources/test-30fps-360p.mp4'),
-        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
-        // )
-        // this.addTrack(t)
-        // var t = new Track(
-        //     uuidv4(),
-        //     require('../resources/test-30fps-360p.mp4'),
-        //     1.0, false, false, this.tracks.length, this.referenceTrackId, this.referenceTimeOffset
-        // )
-        // this.addTrack(t)
     }
 
-    loadCameraRollPreview = () => {
+    loadCameraRollPreview = async () => {
         if (this.cameraRollImage == null) {
+
+            if (Platform.OS === 'android') {
+                try {
+                    const granted = await PermissionsAndroid.request(
+                        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+                        {
+                            title: "Media acess",
+                            message:
+                                "Recco needs access to your media to import videos/audio files",
+                            // buttonNeutral: "Ask Me Later",
+                            buttonNegative: "Cancel",
+                            buttonPositive: "Allow"
+                        }
+                    );
+                    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                        console.log('Access to READ_EXTERNAL_STORAGE granted by user')
+                    } else {
+                        console.log('Access to READ_EXTERNAL_STORAGE not granted by user')
+                    }
+                } catch (err) {
+                    console.warn(err);
+                }
+            }
+
             var options = {
                 first: 1,
                 assetType: "Videos"
             }
             CameraRoll.getPhotos(options).then((photos) => {
                 if (photos.edges.length > 0) {
-                    this.cameraRollImage = { uri: Utils.phToAssetsUri(photos.edges[0].node.image.uri) }
+                    var uri = photos.edges[0].node.image.uri
+                    this.cameraRollImage = { uri: Utils.phToAssetsUri(uri) }
                 } else {
                     this.cameraRollImage = require('../resources/test-30fps-360p.mp4')
                 }
@@ -198,8 +187,32 @@ export default class CameraModel extends RhelenaPresentationModel {
         this.showVideoPicker = false
     }
 
-    shareTrack = (track) => {
+    shareTrack = async(track) => {
         console.log("Saving " + this.selectedTrack.track.source.uri + " to camera roll")
+
+        if (Platform.OS === 'android') {
+            try {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+                    {
+                        title: "Media write access",
+                        message:
+                            "Recco needs write acces to your media in order to save recorded videos",
+                        // buttonNeutral: "Ask Me Later",
+                        buttonNegative: "Cancel",
+                        buttonPositive: "Allow"
+                    }
+                );
+                if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                    console.log('Access to WRITE_EXTERNAL_STORAGE granted by user')
+                } else {
+                    console.log('Access to WRITE_EXTERNAL_STORAGE not granted by user')
+                }
+            } catch (err) {
+                console.warn(err);
+            }
+        }
+
         CameraRoll.saveToCameraRoll(this.selectedTrack.track.source.uri, "video").then((uri) => {
             console.log("Video saved to camera roll successfuly");
             showMessage({
@@ -286,7 +299,7 @@ export default class CameraModel extends RhelenaPresentationModel {
     confirmTrackDeleteAlert = (okAction) =>
         Alert.alert(
             "Track delete",
-            "You are about to delete this track. If not saved, all data will be lost. Confirm?",
+            "You are about to delete this track. Confirm?",
             [
                 {
                     text: "Cancel",
@@ -333,10 +346,12 @@ export default class CameraModel extends RhelenaPresentationModel {
 
             const options = {
                 quality: RNCamera.Constants.VideoQuality['480p'],
-                codec: RNCamera.Constants.VideoCodec['H264'],
                 maxDuration: 600,
                 maxFileSize: 400 * 1024 * 1024,
             };
+            if(Platform.OS == 'ios') {
+                options.codec = RNCamera.Constants.VideoCodec['H264']
+            }
 
             console.log(new Date().getTime() + ' starting recording')
 

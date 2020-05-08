@@ -5,9 +5,16 @@ The main problem this App solves is to playback and record a video at the same t
 
 ## Development Tips
 
-### Development machine preparation
+### Development machine preparation (based on MacOS)
 
-* Install XCode and/or Android Studio
+* Install XCode
+
+* Install Android Studio and configure it
+  * Open https://reactnative.dev/docs/environment-setup
+  * Click on "React Native CLI Quickstart"
+  * Click "Android"
+  * Follow installation and configuration instructions. There are lots of manual steps.
+  * On MacOS Cataline, place exports and paths to ~/.zprofile (https://stackoverflow.com/questions/56784894/macos-catalina-10-15beta-why-is-bash-profile-not-sourced-by-my-shell)
 
 * Install React Native related tools
 ```
@@ -26,9 +33,14 @@ cd ios
 pod install
 ```
 
-* Launch app on emulator 
+* Launch app on emulator on XCode for iOS
 ```
 npx react-native run-ios
+```
+
+* Launch app on emulator on Android Studio
+```
+npx react-native run-android
 ```
 
 ### Common tasks
@@ -75,4 +87,12 @@ npx react-native run-ios --device "Flavios iPhone"
 
 * In general, playback takes 200ms to actually start and record takes 800ms to begin after commanded. The app makes these measurements automatically because this varies from device to device.
 
+### Apple and Play Store descriptions
 
+* short: Record an audio/video while playing another audio/video in sync and create mixes
+
+* full: Recording while listening to another audio in sync is easy with Recco. Import media from your own media, create new recordings while listening/viewing the imported media and then save your work back to camera roll.
+
+Very useful for musicians seeking to "play" together at distance without the burden of manual syncing and editing of video/audio tracks. 
+
+Recco was created by musicians seeking the feeling of a "live rehearsal" at distance with other people so that it would be easy to give and get feedback from others.

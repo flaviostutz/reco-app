@@ -27,6 +27,7 @@ import Video from 'react-native-video';
 import SplashScreen from 'react-native-splash-screen';
 
 import Utils from '../domain/Utils'
+import { Platform } from "react-native";
 
 import CameraModel from './CameraModel'
 
@@ -346,6 +347,9 @@ export default class CameraView extends Component {
                                                 onEnd={t.onEnd}
                                                 onError={t.onError}
                                                 muted={t.track.audioMute}
+                                                onLoad={() => {
+                                                    t.player.seek(0);
+                                                }}
                                                 // onLoad={this.onLoad}
                                                 // onLoadStart={this.onLoadStart}
                                                 // onBuffer={this.onBuffer}
