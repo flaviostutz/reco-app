@@ -374,7 +374,14 @@ export default class CameraView extends Component {
                                         <TouchableOpacity onPress={() => { this.viewModel.addTrackFromCameraRoll() }}
                                             style={{ flex: 0.75 }}>
                                             <Video source={this.viewModel.cameraRollImage}
-                                                paused={true} style={{ flex: 1 }}
+                                                ref={ref => {
+                                                    this.viewModel.cameraThumb = ref;
+                                                }}
+                                                paused={true} 
+                                                style={{ flex: 1 }}
+                                                onLoad={() => {
+                                                    this.viewModel.cameraThumb.seek(0);
+                                                }}
                                             />
                                         </TouchableOpacity>
                                     }
