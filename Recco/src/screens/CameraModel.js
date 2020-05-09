@@ -86,12 +86,12 @@ export default class CameraModel extends RhelenaPresentationModel {
                 assetType: "Videos"
             }
             CameraRoll.getPhotos(options).then((photos) => {
-                // if (photos.edges.length > 0) {
-                //     var uri = photos.edges[0].node.image.uri
-                //     this.cameraRollImage = { uri: Utils.phToAssetsUri(uri) }
-                // } else {
+                if (photos.edges.length > 0) {
+                    var uri = photos.edges[0].node.image.uri
+                    this.cameraRollImage = { uri: Utils.phToAssetsUri(uri) }
+                } else {
                     this.cameraRollImage = require('../resources/test-30fps-360p.mp4')
-                // }
+                }
             }).catch((err) => {
                 console.warn('Error getting photo: ' + err)
             })
