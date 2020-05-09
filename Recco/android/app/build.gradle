@@ -152,12 +152,10 @@ android {
             keyPassword 'android'
         }
         release {
-            if (project.hasProperty('RECCO_UPLOAD_STORE_FILE')) {
-                storeFile file(RECCO_UPLOAD_STORE_FILE)
-                storePassword RECCO_UPLOAD_STORE_PASSWORD
-                keyAlias RECCO_UPLOAD_KEY_ALIAS
-                keyPassword RECCO_UPLOAD_KEY_PASSWORD
-            }
+            storeFile file(System.getenv('RECCO_UPLOAD_STORE_FILE'))
+            storePassword System.getenv('RECCO_UPLOAD_STORE_PASSWORD')
+            keyAlias System.getenv('RECCO_UPLOAD_KEY_ALIAS')
+            keyPassword System.getenv('RECCO_UPLOAD_KEY_PASSWORD')
         }        
     }
     buildTypes {
@@ -167,7 +165,7 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://facebook.github.io/react-native/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }

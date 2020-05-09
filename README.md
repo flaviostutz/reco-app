@@ -128,7 +128,7 @@ npx react-native run-android
 
 * Configure your environment variables to point to the real upload certificate path/configurations
   * Example for MacOS
-  
+
 ```
 vi ~/.zprofile
 export RECCO_UPLOAD_STORE_FILE=~/recco-upload.keystore
