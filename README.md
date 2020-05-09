@@ -161,3 +161,6 @@ cd android
 Very useful for musicians seeking to "play" together at distance without the burden of manual syncing and editing of video/audio tracks. 
 
 Recco was created by musicians seeking the feeling of a "live rehearsal" at distance with other people so that it would be easy to give and get feedback from others.
+
+* [Privacy policy](PRIVACY_POLICY.md)
+* [Terms and conditions](TERMS_CONDITIONS.md)
