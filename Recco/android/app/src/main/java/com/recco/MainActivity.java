@@ -1,6 +1,8 @@
 package com.recco;
 
 import com.facebook.react.ReactActivity;
+import org.devio.rn.splashscreen.SplashScreen; // import this
+import android.os.Bundle;
 
 public class MainActivity extends ReactActivity {
 
@@ -12,4 +14,11 @@ public class MainActivity extends ReactActivity {
   protected String getMainComponentName() {
     return "Recco";
   }
+
+//  @Override
+//  protected void onCreate(Bundle savedInstanceState) {
+//    SplashScreen.show(this);  // here
+//    super.onCreate(savedInstanceState);
+//  }
+
 }

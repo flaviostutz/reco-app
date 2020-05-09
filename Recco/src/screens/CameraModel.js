@@ -86,12 +86,12 @@ export default class CameraModel extends RhelenaPresentationModel {
                 assetType: "Videos"
             }
             CameraRoll.getPhotos(options).then((photos) => {
-                if (photos.edges.length > 0) {
-                    var uri = photos.edges[0].node.image.uri
-                    this.cameraRollImage = { uri: Utils.phToAssetsUri(uri) }
-                } else {
+                // if (photos.edges.length > 0) {
+                //     var uri = photos.edges[0].node.image.uri
+                //     this.cameraRollImage = { uri: Utils.phToAssetsUri(uri) }
+                // } else {
                     this.cameraRollImage = require('../resources/test-30fps-360p.mp4')
-                }
+                // }
             }).catch((err) => {
                 console.warn('Error getting photo: ' + err)
             })
@@ -194,10 +194,12 @@ export default class CameraModel extends RhelenaPresentationModel {
     onVideoSelected = async (images, current) => {
         console.log("ADDING NEW TRACK FROM CAMERA ROLL " + Utils.phToAssetsUri(current.uri))
 
+        var refTrackId = this.getBestTrackReference()
+
         var t = new Track(
             uuidv4(),
             { uri: Utils.phToAssetsUri(current.uri) },
-            1.0, false, false, this.tracks.length, null, null
+            1.0, false, false, this.tracks.length, refTrackId, 0
         )
         this.addTrack(t)
         this.showVideoPicker = false
@@ -343,21 +345,13 @@ export default class CameraModel extends RhelenaPresentationModel {
         if (this.state == 'idle') {
             this.state = 'preparing'
 
+            console.log("START RECORDING")
+
             this.lastRecording = null
             this.recordingReferenceTimeOffset = null
-            this.recordingReferenceTrackId = null
+            this.recordingReferenceTrackId = this.getBestTrackReference()
+            console.log('this.recordingReferenceTrackId=' + this.recordingReferenceTrackId)
 
-            for (var i = 0; i < this.tracks.length; i++) {
-                var t = this.tracks[i]
-                console.log('t.track.referenceTrackId=' + t.track.referenceTrackId)
-                if (t.track.referenceTrackId == null) {
-                    this.recordingReferenceTrackId = t.track.id
-                    console.log('this.recordingReferenceTrackId=' + this.recordingReferenceTrackId)
-                    break
-                }
-            }
-
-            console.log("START RECORDING")
             console.log('Recording reference track = ' + this.recordingReferenceTrackId)
 
             const options = {
@@ -392,6 +386,17 @@ export default class CameraModel extends RhelenaPresentationModel {
                 console.warn("Video recording error. err=" + err);
             })
         }
+    }
+
+    getBestTrackReference = () => {
+        for (var i = 0; i < this.tracks.length; i++) {
+            var t = this.tracks[i]
+            console.log('t.track.referenceTrackId=' + t.track.referenceTrackId)
+            if (t.track.referenceTrackId == null) {
+                return t.track.id
+            }
+        }
+        return null
     }
 
     createAndAddTrack = (uri) => {
@@ -440,11 +445,14 @@ export default class CameraModel extends RhelenaPresentationModel {
         if (this.state == 'recording') {
             return {
                 borderColor: "#FF0000",
-                borderRadius: 4,
-                borderWidth: 2,
+                borderRadius: 0,
+                borderWidth: 3,
             }
         }
         return {
+            borderColor: "rgba(0,0,0,1.0)",
+            borderRadius: 0,
+            borderWidth: 0,
         }
     }
 
@@ -627,7 +635,7 @@ class TrackModel {
             if (!this.playing) {
                 return {
                     borderRadius: 6,
-                    borderWidth: 4,
+                    borderWidth: 2,
                     borderColor: '#444444',
                 }
             }
@@ -653,7 +661,7 @@ class TrackModel {
 
     videoStyle = () => {
         if (this.track.order == 0) {
-            return { width: 320, height: 320 }
+            return { width: 280, height: 280 }
         } else {
             return { width: 160, height: 160 }
         }

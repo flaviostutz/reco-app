@@ -129,7 +129,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.recco"
+        applicationId 'com.recco'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         missingDimensionStrategy 'react-native-camera', 'general'
@@ -151,6 +151,14 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            if (project.hasProperty('RECCO_UPLOAD_STORE_FILE')) {
+                storeFile file(RECCO_UPLOAD_STORE_FILE)
+                storePassword RECCO_UPLOAD_STORE_PASSWORD
+                keyAlias RECCO_UPLOAD_KEY_ALIAS
+                keyPassword RECCO_UPLOAD_KEY_PASSWORD
+            }
+        }        
     }
     buildTypes {
         debug {

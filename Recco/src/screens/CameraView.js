@@ -350,6 +350,7 @@ export default class CameraView extends Component {
                                                 onLoad={() => {
                                                     t.player.seek(0);
                                                 }}
+                                                resizeMode={'contain'}
                                                 // onLoad={this.onLoad}
                                                 // onLoadStart={this.onLoadStart}
                                                 // onBuffer={this.onBuffer}
