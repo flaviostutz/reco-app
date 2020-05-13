@@ -141,6 +141,17 @@ export RECCO_UPLOAD_KEY_PASSWORD=usedkeyhere
 
 * Build signed distribution package
 
+  * Change app version in file /android/app/build.gradle:
+  
+```
+android {
+    defaultConfig {
+        versionCode 3
+        versionName "0.0.3"
+    }
+...
+```
+
   * Reference: https://reactnative.dev/docs/signed-apk-android.html
 
 ```
