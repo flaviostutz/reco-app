@@ -1,4 +1,4 @@
-# recco
+# reco
 This is a mobile app that allows the user to record an audio/video while playing another audio/video in sync. Useful for musicians seeking to "play" together at distance.
 
 The main problem this App solves is to playback and record a video at the same time with sub frame synchronism so that musicians can use it to record the various tracks of a music, for example.
@@ -26,7 +26,7 @@ npm install -g react-native ios-deploy
 
 * After cloning project from repo
 ```
-cd Recco
+cd Reco
 npm install
 
 cd ios
@@ -35,7 +35,7 @@ pod install
 
 * Launch app on emulator on XCode for iOS
 ```
-cd Recco
+cd Reco
 npx react-native run-ios
 ```
 
@@ -49,18 +49,20 @@ npx react-native run-android
 * Prepare Icons and Splashscreen for Android and iOS (used this and worked)
   * https://medium.com/better-programming/react-native-add-app-icons-and-launch-screens-onto-ios-and-android-apps-3bfbc20b7d4c
   * https://medium.com/handlebar-labs/how-to-add-a-splash-screen-to-a-react-native-app-ios-and-android-30a3cec835ae
+  * Generate resized icons with https://makeappicon.com/
+  * Play/Apple store screenshots generator: https://www.appstorescreenshot.com/
 
 ### Build/Run on iOS
 
 * Open project on XCode
 
 ```
-open ios/Recco.xcworkspace
+open ios/Reco.xcworkspace
 ```
 
 * Configure certificate on XCode
 
-  * Open project on XCode, then click on "Recco" on root folder -> Target "Recco" -> Tab  "Signing & Capabilities" and select a certificate in "Team" dropbox
+  * Open project on XCode, then click on "Reco" on root folder -> Target "Reco" -> Tab  "Signing & Capabilities" and select a certificate in "Team" dropbox
 
 * Run app on real iOS device
 
@@ -84,7 +86,7 @@ npx react-native run-ios --device "Flavios iPhone"
 
   * Select menu Build -> Make Project and check if everything is right
 
-* Run Recco on Android device
+* Run Reco on Android device
 
   * Connect Android device to your notebook's USB port
 
@@ -116,9 +118,9 @@ npx react-native run-android
 
 ### Tests
 
-* This is an overlay of two videos showing sync between playback and record. The larger numbers is from a Internet video which shows a framecounter. This video was played on Recco while it recorded the video below, taken with a mirror on front of the camera (it is a scissor actually ;). The measurements of actual recording and playback lags of the real device were done automatically.
+* This is an overlay of two videos showing sync between playback and record. The larger numbers is from a Internet video which shows a framecounter. This video was played on Reco while it recorded the video below, taken with a mirror on front of the camera (it is a scissor actually ;). The measurements of actual recording and playback lags of the real device were done automatically.
 
-<img src="recco-sync-test.gif"></img>
+<img src="reco-sync-test.gif"></img>
 
 * In general, playback takes 200ms to actually start and record takes 800ms to begin after commanded. The app makes these measurements automatically because this varies from device to device.
 
@@ -131,10 +133,10 @@ npx react-native run-android
 
 ```
 vi ~/.zprofile
-export RECCO_UPLOAD_STORE_FILE=~/recco-upload.keystore
-export RECCO_UPLOAD_STORE_PASSWORD=usedkeyhere
-export RECCO_UPLOAD_KEY_ALIAS=recco-upload
-export RECCO_UPLOAD_KEY_PASSWORD=usedkeyhere
+export RECO_UPLOAD_STORE_FILE=~/reco-upload.keystore
+export RECO_UPLOAD_STORE_PASSWORD=usedkeyhere
+export RECO_UPLOAD_KEY_ALIAS=reco-upload
+export RECO_UPLOAD_KEY_PASSWORD=usedkeyhere
 ```
 
 * Note: The key ENV variables used during APK signing are located at android/gradle.properties
@@ -161,17 +163,30 @@ cd android
 
 * Go to GooglePlay Console -> App Releases -> Select Open Track -> upload and publish the package
 
-  * The signed package can be found at "[workspace]/Recco/android/app/build/outputs/bundle/release/app-release.aab"
+  * The signed package can be found at "[workspace]/Reco/android/app/build/outputs/bundle/release/app-release.aab"
 
 ### Apple and Play Store descriptions
 
-* short: Record an audio/video while playing another audio/video in sync and create mixes
+* short: 
+EN: Record an audio/video while playing another audio/video in sync and create mixes
 
-* full: Recording while listening to another audio in sync can be easily done with Recco. Import media from your own media, create new recordings while listening/viewing the imported media and then save your work back to camera roll.
+PT: Grave áudio/vídeos enquanto toca outras mídias em sincronia para criar mixagens
+
+* full: 
+EN: Recording while listening to another audio in sync can be easily done with Reco. Import media from your own media, create new recordings while listening/viewing the imported media and then save your work back to camera roll.
 
 Very useful for musicians seeking to "play" together at distance without the burden of manual syncing and editing of video/audio tracks. 
 
-Recco was created by musicians seeking the feeling of a "live rehearsal" at distance with other people so that it would be easy to give and get feedback from others.
+Reco was created by musicians seeking the feeling of a "live rehearsal" at distance with other people so that it would be easy to give and get feedback from others.
+
+Live in Sync!
+
+PT: Gravar enquanto escuta um outro vídeo in sincronia pode ser realizado facilmente com Reco. Importe vídeos de sua própria mídia, crie novas gravações enquanto ouve/assiste e salve seu trabalho de volta no rolo de câmera.
+
+Muito útil para músicos que querem "tocar" junto com outros músicas a distância sem a trabalheira de ter que sincronizar trilhas de áudio/vídeo.
+
+Reco foi criado por músicos que estava querendo ter o "feeling" de um ensaio ao vivo junto com os outros mesmo estando à distância de maneira que seja fácil gravar, ouvir, dar e receber feedbacks dos outros em um curo espaço de tempo.
+
 
 * [Privacy policy](PRIVACY_POLICY.md)
 * [Terms and conditions](TERMS_CONDITIONS.md)
